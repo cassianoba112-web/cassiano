@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <!-- Configurações básicas da página -->
+    <meta charset="UTF-8">
+    <!-- Faz a página se adaptar à tela do celular -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cassiano | Portfólio</title>
+    <meta name="description" content="Portfólio pessoal do Cassiano: projetos de HTML, CSS e JavaScript.">
+    <!-- Liga o arquivo de estilos (CSS) -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- ===== CABEÇALHO com o menu de navegação ===== -->
+    <header class="topo">
+        <a href="#inicio" class="logo">Cassiano<span>.</span></a>
+
+        <!-- Botão que aparece só no celular para abrir o menu -->
+        <button class="menu-botao" aria-label="Abrir menu" aria-expanded="false">☰</button>
+
+        <nav class="menu">
+            <a href="#sobre">Sobre</a>
+            <a href="#habilidades">Habilidades</a>
+            <a href="#projetos">Projetos</a>
+            <a href="#contato">Contato</a>
+        </nav>
+    </header>
+
+    <main>
+        <!-- ===== INÍCIO: a primeira coisa que a pessoa vê ===== -->
+        <section id="inicio" class="inicio">
+            <p class="saudacao">Olá, eu sou</p>
+            <h1>Cassiano</h1>
+            <!-- TROQUE: escreva uma frase curta sobre você -->
+            <p class="frase">Estudante de desenvolvimento web, aprendendo a criar páginas com HTML, CSS e JavaScript.</p>
+            <div class="botoes">
+                <a href="#projetos" class="botao">Ver projetos</a>
+                <a href="#contato" class="botao botao-contorno">Fale comigo</a>
+            </div>
+        </section>
+
+        <!-- ===== SOBRE MIM ===== -->
+        <section id="sobre" class="secao">
+            <h2>Sobre mim</h2>
+            <!-- TROQUE: conte um pouco da sua história -->
+            <p>
+                Comecei a estudar programação pelo desenvolvimento web e estou
+                gostando muito de ver as ideias virarem páginas de verdade.
+                Neste portfólio eu guardo os projetos que vou fazendo
+                enquanto aprendo.
+            </p>
+            <p>
+                Meu objetivo agora é aprender bem os fundamentos e, em seguida,
+                partir para o JavaScript e projetos maiores.
+            </p>
+        </section>
+
+        <!-- ===== HABILIDADES ===== -->
+        <section id="habilidades" class="secao">
+            <h2>Habilidades</h2>
+            <!-- Para adicionar uma habilidade, copie uma linha <li> -->
+            <ul class="habilidades">
+                <li><span class="tag tag-html">HTML</span> Estrutura de páginas</li>
+                <li><span class="tag tag-css">CSS</span> Cores, layout e responsividade</li>
+                <li><span class="tag tag-js">JS</span> Aprendendo agora</li>
+                <li><span class="tag tag-git">Git</span> Versionamento e GitHub</li>
+            </ul>
+        </section>
+
+        <!-- ===== PROJETOS ===== -->
+        <section id="projetos" class="secao">
+            <h2>Projetos</h2>
+            <!-- Cada <article> é um cartão. Para adicionar um projeto, copie um <article> inteiro -->
+            <div class="projetos">
+                <article class="cartao">
+                    <h3>Atividade HTML-01</h3>
+                    <p>Minha primeira página: cabeçalho, layout em três colunas, imagens, vídeo e rodapé.</p>
+                    <div class="cartao-tags">
+                        <span class="tag tag-html">HTML</span>
+                        <span class="tag tag-css">CSS</span>
+                    </div>
+                </article>
+
+                <article class="cartao">
+                    <h3>Este portfólio</h3>
+                    <p>Página pessoal responsiva, com modo escuro e menu para celular.</p>
+                    <div class="cartao-tags">
+                        <span class="tag tag-html">HTML</span>
+                        <span class="tag tag-css">CSS</span>
+                        <span class="tag tag-js">JS</span>
+                    </div>
+                    <a href="https://github.com/cassianoba112-web/cassiano" target="_blank" rel="noopener">Ver código →</a>
+                </article>
+
+                <article class="cartao cartao-vazio">
+                    <h3>Próximo projeto</h3>
+                    <p>Em breve! Talvez uma calculadora, uma lista de tarefas ou um jogo.</p>
+                </article>
+            </div>
+        </section>
+
+        <!-- ===== CONTATO ===== -->
+        <!-- Dica: evite colocar telefone ou endereço pessoal em sites públicos -->
+        <section id="contato" class="secao">
+            <h2>Contato</h2>
+            <p>Quer trocar uma ideia ou ver mais do meu trabalho? Me encontre no GitHub:</p>
+            <a href="https://github.com/cassianoba112-web" class="botao" target="_blank" rel="noopener">Meu GitHub</a>
+        </section>
+    </main>
+
+    <!-- ===== RODAPÉ ===== -->
+    <footer class="rodape">
+        <!-- O ano é preenchido automaticamente pelo JavaScript -->
+        <p>© <span id="ano"></span> Cassiano. Feito com HTML, CSS e JS.</p>
+    </footer>
+
+    <!-- Liga o arquivo de JavaScript (fica no fim para a página carregar primeiro) -->
+    <script src="script.js"></script>
+</body>
+</html>
