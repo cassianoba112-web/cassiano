@@ -1,6 +1,6 @@
 # Portfólio do Cassiano
 
-Meu portfólio pessoal, feito com HTML, CSS e JavaScript puros.
+Meu portfólio de fotografia e edição de fotos, feito com HTML, CSS e JavaScript puros.
 
 ## Arquivos
 
@@ -10,8 +10,8 @@ Meu portfólio pessoal, feito com HTML, CSS e JavaScript puros.
 
 ## Como editar
 
-- **Textos:** procure os comentários `TROQUE` no `index.html`.
-- **Novo projeto:** copie um bloco `<article class="cartao">` inteiro e mude o texto.
+- **Fotos:** envie suas fotos para uma pasta `fotos/` e siga o comentário da galeria no `index.html`.
+- **Novo serviço:** copie um bloco `<article class="cartao">` inteiro e mude o texto.
 - **Cores:** mude as variáveis no topo do `style.css`.
 
 ## Publicar no GitHub Pages
