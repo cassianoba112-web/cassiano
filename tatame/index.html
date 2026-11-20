@@ -25,15 +25,6 @@
   --belt-black: #121212;
   --bar-black: #121212;
   --bar-red: #C8102E;
-  --gi-blue: #2A55C4;
-  --gi-blue-far: #1F428F;
-  --gi-blue-out: #132B66;
-  --gi-white: #F6F5F1;
-  --gi-white-far: #D6DAE0;
-  --gi-white-out: #4E5867;
-  --skin: #D59B74;
-  --skin-out: #8A5A3C;
-  --hair: #2B1E16;
   --font-display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
   --font-body: "Barlow", "Segoe UI", system-ui, sans-serif;
   --r: 10px;
@@ -211,26 +202,19 @@ main { padding-block: 24px 64px; }
 .degrees button { width: 34px; height: 34px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); font-weight: 700; }
 .degrees button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
 
-/* Pose animation */
-.anim { margin: -4px -4px 14px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--line); overflow: hidden; }
-.anim svg { display: block; width: 100%; height: auto; }
-.anim-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 10px; border-top: 1px solid var(--line); flex-wrap: wrap; }
-.anim-cap { font-size: 13px; color: var(--muted); flex: 1 1 200px; min-width: 0; }
-.legend { display: flex; gap: 12px; font-size: 12px; color: var(--muted); padding: 8px 10px 0; }
-.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -2px; margin-right: 4px; border: 1px solid var(--muted); }
 .yt { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--accent); text-decoration: none; }
 .yt:hover { text-decoration: underline; }
 .yt svg { width: 16px; height: 16px; flex: none; }
-.stage svg, .stage canvas { display: block; width: 100%; height: auto; aspect-ratio: 15 / 8; }
-.stage canvas { cursor: grab; touch-action: pan-y; }
-.stage canvas.dragging { cursor: grabbing; }
-.drag-hint { margin-left: auto; }
-.tanim { margin: 0; }
-.tanim .anim-bar { padding: 6px 10px; }
-.sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; background: var(--gi-blue); margin-right: 5px; vertical-align: -1px; }
-.tech ol li[data-step] { cursor: pointer; border-radius: 4px; padding: 1px 6px; margin-left: -6px; transition: background .2s; }
-.tech ol li[data-step]:hover { background: var(--surface-2); }
-.tech ol li.active { background: var(--accent-soft); color: var(--ink); font-weight: 600; }
+/* Video tiles */
+.vtile { display: flex; gap: 14px; align-items: center; padding: 12px; border-radius: 10px; background: var(--ink); color: var(--bg); text-decoration: none; transition: transform .15s, box-shadow .15s; }
+.vtile:hover { transform: translateY(-1px); box-shadow: 0 6px 18px color-mix(in srgb, var(--ink) 25%, transparent); }
+.vplay { flex: none; width: 52px; height: 52px; border-radius: 50%; background: var(--danger); display: grid; place-items: center; }
+.vplay svg { width: 24px; height: 24px; fill: #fff; margin-left: 3px; }
+.vtext { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.vlabel { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; opacity: .7; font-weight: 600; }
+.vlang { display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 4px; background: color-mix(in srgb, var(--bg) 18%, transparent); letter-spacing: .04em; }
+.vtitle { font-family: var(--font-display); font-size: 19px; font-weight: 700; line-height: 1.15; overflow-wrap: anywhere; }
+.vgo { font-size: 13px; opacity: .8; }
 
 .toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 8px; font-weight: 600; z-index: 20; }
 
@@ -432,7 +416,6 @@ main { padding-block: 24px 64px; }
 </main>
 <div class="toast" id="toast" hidden></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 (() => {
 "use strict";
@@ -704,18 +687,11 @@ function renderPosDetail(id) {
   const techs = T.filter(t => t.pos === id);
   const linkBtn = (tid, txt, chip) => `<button data-go="${tid}"><span>${esc(txt)}</span>${chip ? `<span class="chip pts">${chip}</span>` : ""}</button>`;
   $("#pos-detail").innerHTML = `
-    <div class="anim">
-      <div class="legend"><span><i style="background:var(--gi-blue)"></i>Kimono azul</span><span><i style="background:var(--gi-white)"></i>Kimono branco</span>${R3.ok ? `<span class="drag-hint">Arraste para girar</span>` : ""}</div>
-      <div class="stage" id="pos-stage" data-label="Animação da posição ${esc(p.n)}"></div>
-      <div class="anim-bar">
-        <span class="anim-cap">${esc(POSES[id].cap)}</span>
-        <button class="btn small" data-anim-toggle type="button">❚❚ Pausar</button>
-      </div>
-    </div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="role ${p.role}">${roleTxt}</span>${p.pts ? `<span class="chip pts">${p.pts} pontos ao chegar</span>` : ""}</div>
     <h3 style="margin-top:8px">${esc(p.n)}</h3>
     <div class="alias">${esc(p.alias)}</div>
     <p>${esc(p.d)}</p>
+    ${videoTile(POSVID[id], "Vídeo da posição")}
     <div class="goal-cols">
       <div><div class="label">Por cima</div><ul>${p.top.map(x => `<li>${esc(x)}</li>`).join("")}</ul></div>
       <div><div class="label">Por baixo</div><ul>${p.bot.map(x => `<li>${esc(x)}</li>`).join("")}</ul></div>
@@ -726,525 +702,69 @@ function renderPosDetail(id) {
       <span class="hint">${techs.length} técnica${techs.length !== 1 ? "s" : ""} desta posição na biblioteca</span>
       ${techs.length ? `<a class="btn small" href="#tecnicas" data-filter-pos="${id}">Ver técnicas</a>` : ""}
     </div>
-    <div style="margin-top:10px">${ytLink(p.n + " " + (p.yt || "posição"), "Ver vídeos de " + p.n + " no YouTube")}</div>`;
-  registerAnim($("#pos-stage"), POSCLIPS[id], $("#pos-detail"));
-  $("#pos-detail [data-anim-toggle]").addEventListener("click", () => toggleAnim($("#pos-stage")));
+    <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px">${ytLink(p.n + " " + (p.yt || "posição"), "Mais vídeos de " + p.n)}</div>`;
   $$("#pos-detail [data-go]").forEach(b => b.addEventListener("click", () => selectPos(b.dataset.go)));
   const fl = $("#pos-detail [data-filter-pos]");
   if (fl) fl.addEventListener("click", () => { $("#f-pos").value = id; filt.pos = id; renderTech(); });
 }
 
-/* ---------- POSE ANIMATIONS ---------- */
-// joints: 0 head, 1 shoulder, 2 near elbow, 3 near hand, 4 far elbow, 5 far hand, 6 hip, 7 near knee, 8 near foot, 9 far knee, 10 far foot
-const mirror = f => f.map(([x, y]) => [300 - x, y]);
-const ov = (f, o) => f.map((pt, i) => o[i] || pt);
-const shift = (f, dx, dy, idx) => f.map((pt, i) => (!idx || idx.includes(i)) ? [pt[0] + dx, pt[1] + dy] : pt);
-const STAND = [[110,40],[112,55],[130,70],[150,62],[128,78],[152,78],[110,95],[118,118],[122,140],[100,118],[96,140]];
-const BOT = [[90,132],[106,130],[100,114],[112,106],[104,120],[116,112],[160,130],[180,110],[202,138],[174,118],[196,140]];
-const POSES = {
-  pe: { cap: "Disputa de pegada: os dois buscam gola e manga, procurando o desequilíbrio para a queda.",
-    a: [STAND, ov(shift(STAND, 10, 8, [0,1,2,3,4,5]), { 6: [116,98], 7: [128,120] })],
-    b: [mirror(STAND), mirror(shift(STAND, -4, 0))], front: "a" },
-  guarda_fechada: { cap: "Azul trancado na guarda puxa a gola e quebra a postura do branco, que tenta ficar reto.",
-    a: [[[58,130],[76,128],[110,100],[150,74],[112,108],[152,82],[130,126],[152,100],[190,108],[148,106],[186,114]],
-        [[58,130],[76,128],[100,108],[130,92],[102,114],[132,98],[130,126],[150,100],[188,108],[146,106],[184,114]]],
-    b: [[[160,48],[164,64],[150,88],[134,118],[156,92],[140,120],[176,104],[160,138],[204,140],[168,138],[210,140]],
-        [[128,80],[140,86],[132,104],[124,122],[138,108],[130,124],[176,104],[160,138],[204,140],[168,138],[210,140]]], front: "a" },
-  guarda_aberta: { cap: "Azul com os pés no quadril controla a distância; branco em pé segura os joelhos para passar.",
-    a: [[[58,132],[76,129],[100,112],[118,104],[98,120],[116,112],[120,125],[140,96],[168,90],[136,104],[166,104]],
-        [[58,132],[76,129],[100,112],[118,104],[98,120],[116,112],[120,125],[148,94],[180,90],[144,102],[178,104]]],
-    b: [[[166,50],[174,62],[160,80],[144,96],[166,84],[140,104],[196,90],[194,116],[200,140],[208,116],[216,140]],
-        shift([[166,50],[174,62],[160,80],[144,96],[166,84],[140,104],[196,90],[194,116],[200,140],[208,116],[216,140]], 12, 0)], front: "b" },
-  meia: { cap: "Branco por cima esmaga com o peito; azul de lado prende uma perna e luta pelo braço por baixo.",
-    a: [[[70,124],[86,121],[78,104],[96,96],[96,130],[112,126],[140,128],[170,120],[196,130],[164,132],[200,124]],
-        [[70,124],[86,121],[78,110],[92,104],[96,130],[112,126],[140,128],[170,120],[196,130],[164,132],[200,124]]],
-    b: [[[94,104],[108,108],[98,124],[82,130],[118,118],[110,132],[166,110],[186,134],[214,138],[152,138],[184,140]],
-        shift([[94,104],[108,108],[98,124],[82,130],[118,118],[110,132],[166,110],[186,134],[214,138],[152,138],[184,140]], -6, 5, [0,1,2,3,4,5])], front: "b" },
-  tartaruga: { cap: "Azul de quatro protege o pescoço; branco faz o cinto de segurança e entra o gancho.",
-    a: [[[110,118],[126,112],[124,128],[114,138],[120,130],[108,138],[176,108],[180,140],[206,140],[170,140],[198,140]],
-        [[110,120],[126,114],[124,128],[114,138],[120,130],[108,138],[176,110],[180,140],[206,140],[170,140],[198,140]]],
-    b: [[[146,84],[156,92],[140,106],[130,122],[150,108],[136,126],[204,96],[214,138],[242,140],[204,138],[232,140]],
-        [[146,86],[156,94],[140,108],[130,122],[150,110],[136,126],[196,100],[200,118],[184,126],[204,138],[232,140]]], front: "b" },
-  norte_sul: { cap: "Branco com o peito sobre o peito do azul, cabeça para o quadril; azul empurra os ombros para criar espaço.",
-    a: [[[152,132],[136,130],[156,120],[148,110],[150,122],[142,114],[86,130],[64,110],[42,138],[70,118],[46,140]],
-        [[152,132],[136,130],[158,118],[152,106],[152,120],[146,110],[86,130],[60,108],[38,138],[66,116],[42,140]]],
-    b: [[[128,112],[144,114],[134,126],[120,132],[140,128],[124,134],[200,108],[214,138],[244,140],[204,138],[236,140]],
-        [[128,116],[144,118],[134,128],[120,132],[140,130],[124,134],[198,118],[214,138],[244,140],[204,138],[236,140]]], front: "b" },
-  cem: { cap: "Branco atravessado no peito do azul, quadril baixo; azul enquadra com os antebraços.",
-    a: [BOT, ov(BOT, { 3: [116,102], 5: [120,108] })],
-    b: [[[100,110],[116,112],[100,124],[86,132],[110,126],[96,134],[152,100],[142,138],[176,140],[160,138],[190,140]],
-        [[98,112],[114,114],[100,124],[86,132],[110,126],[96,134],[154,110],[142,138],[176,140],[160,138],[190,140]]], front: "b" },
-  joelho: { cap: "Branco crava o joelho na barriga e segura gola e calça; azul empurra o joelho tentando fugir o quadril.",
-    a: [ov(BOT, { 2: [118,116], 3: [138,118], 4: [114,122], 5: [134,124] }), ov(BOT, { 2: [120,114], 3: [140,114], 4: [116,120], 5: [136,120], 6: [164,132] })],
-    b: [[[146,44],[150,58],[140,86],[130,116],[164,80],[176,120],[166,90],[144,120],[172,132],[186,108],[206,140]],
-        shift([[146,44],[150,58],[140,86],[130,116],[164,80],[176,120],[166,90],[144,120],[172,132],[186,108],[206,140]], 0, -6, [0,1,2,4,6])], front: "b" },
-  montada: { cap: "Branco sentado no tronco do azul. Ao inclinar para frente, abre espaço para a ponte (upa) do azul.",
-    a: [[[70,132],[86,130],[96,112],[112,100],[92,118],[106,108],[146,130],[170,110],[194,138],[166,116],[188,140]],
-        [[70,132],[86,130],[94,114],[106,104],[90,120],[100,112],[146,124],[170,106],[194,138],[166,112],[188,140]]],
-    b: [[[112,58],[116,72],[104,92],[94,118],[110,96],[100,124],[122,112],[100,134],[138,136],[110,138],[148,140]],
-        [[94,74],[102,84],[90,100],[82,124],[96,104],[86,128],[122,108],[100,132],[138,136],[110,136],[148,140]]], front: "b" },
-  costas: { cap: "Branco nas costas com os dois ganchos e o braço no pescoço; azul protege a gola e cai para o lado.",
-    a: [[[146,74],[150,90],[140,104],[150,92],[144,110],[156,98],[162,130],[190,110],[216,138],[184,116],[210,140]],
-        shift([[146,74],[150,90],[140,104],[150,92],[144,110],[156,98],[162,130],[190,110],[216,138],[184,116],[210,140]], -8, 4, [0,1,2,3,4,5])],
-    b: [[[132,78],[134,94],[148,96],[158,84],[146,110],[160,104],[128,132],[164,112],[182,120],[160,118],[178,128]],
-        shift([[132,78],[134,94],[148,96],[158,84],[146,110],[160,104],[128,132],[164,112],[182,120],[160,118],[178,128]], -8, 4, [0,1,2,3,4,5])],
-    front: "a", armsOver: "b" }
-};
 POS.cem.yt = "controle lateral"; POS.joelho.yt = "knee on belly";
-/* ---------- CLIPS: positions (loops) and techniques (step by step) ---------- */
-const o = ov, mv = shift, UP = [0,1,2,3,4,5];
-const ST_B = mirror(STAND);
-const GF_A = [[58,130],[76,128],[110,100],[150,74],[112,108],[152,82],[130,126],[152,100],[190,108],[148,106],[186,114]];
-const GF_B = [[160,48],[164,64],[150,88],[134,118],[156,92],[140,120],[176,104],[160,138],[204,140],[168,138],[210,140]];
-const GA_A = [[58,132],[76,129],[100,112],[118,104],[98,120],[116,112],[120,125],[140,96],[168,90],[136,104],[166,104]];
-const GA_B = [[166,50],[174,62],[160,80],[144,96],[166,84],[140,104],[196,90],[194,116],[200,140],[208,116],[216,140]];
-const MEIA_A = [[70,124],[86,121],[78,104],[96,96],[96,130],[112,126],[140,128],[170,120],[196,130],[164,132],[200,124]];
-const MEIA_B = [[94,104],[108,108],[98,124],[82,130],[118,118],[110,132],[166,110],[186,134],[214,138],[152,138],[184,140]];
-const TART_A = [[110,118],[126,112],[124,128],[114,138],[120,130],[108,138],[176,108],[180,140],[206,140],[170,140],[198,140]];
-const TART_B = [[146,84],[156,92],[140,106],[130,122],[150,108],[136,126],[204,96],[214,138],[242,140],[204,138],[232,140]];
-const NS_A = [[152,132],[136,130],[156,120],[148,110],[150,122],[142,114],[86,130],[64,110],[42,138],[70,118],[46,140]];
-const NS_B = [[128,112],[144,114],[134,126],[120,132],[140,128],[124,134],[200,108],[214,138],[244,140],[204,138],[236,140]];
-const CEM_B = [[100,110],[116,112],[100,124],[86,132],[110,126],[96,134],[152,100],[142,138],[176,140],[160,138],[190,140]];
-const JNB_B = [[146,44],[150,58],[140,86],[130,116],[164,80],[176,120],[166,90],[144,120],[172,132],[186,108],[206,140]];
-const MONT_A = [[70,132],[86,130],[96,112],[112,100],[92,118],[106,108],[146,130],[170,110],[194,138],[166,116],[188,140]];
-const MONT_B = [[112,58],[116,72],[104,92],[94,118],[110,96],[100,124],[122,112],[100,134],[138,136],[110,138],[148,140]];
-const CV = [[146,74],[150,90],[140,104],[150,92],[144,110],[156,98],[162,130],[190,110],[216,138],[184,116],[210,140]];
-const CA = [[132,78],[134,94],[148,96],[158,84],[146,110],[160,104],[128,132],[164,112],[182,120],[160,118],[178,128]];
-const K = (a, b, s, x) => Object.assign({ a, b, s }, x || {});
-
-const POSCLIPS = {};
-Object.entries(POSES).forEach(([id, p]) => {
-  POSCLIPS[id] = { me: "a", front: p.front, armsOver: p.armsOver, hold: 250, trans: 1350,
-    keys: [K(p.a[0], p.b[0], null), K(p.a[1], p.b[1], null)] };
-});
-
-const TA = {};
-// --- Guarda fechada (azul por baixo aplica)
-{ const k0 = o(GF_A, {2:[100,110],3:[132,116]});
-  TA["Armlock da guarda"] = { me: "a", front: "a", keys: [
-    K(k0, GF_B, 0),
-    K(o(k0, {0:[64,124],7:[150,112],8:[176,108],9:[150,92],10:[176,86]}), GF_B, 1),
-    K(o(GF_A, {0:[62,126],2:[96,114],3:[118,106],4:[100,118],5:[122,108],7:[148,100],8:[176,112],9:[146,64],10:[174,52]}), o(GF_B, {0:[150,60],1:[158,72],2:[140,96],3:[116,108]}), 2),
-    K(o(GF_A, {0:[60,128],2:[94,112],3:[112,106],4:[98,116],5:[116,108],6:[130,116],7:[146,94],8:[172,108],9:[140,72],10:[168,64]}), o(GF_B, {0:[146,70],1:[152,82],2:[132,95],3:[112,108],4:[148,96],5:[130,110]}), 3, { hl: ["b", 2] })] }; }
-{ const a0 = o(GF_A, {2:[104,114],3:[126,116]}), b0 = o(GF_B, {3:[128,118]});
-  TA["Triângulo"] = { me: "a", front: "a", keys: [
-    K(a0, b0, 0),
-    K(o(a0, {7:[150,64],8:[180,58],9:[150,104],10:[184,114]}), o(b0, {0:[152,58],1:[160,70]}), 1),
-    K(o(GF_A, {6:[126,108],2:[104,110],3:[126,112],7:[148,66],8:[172,52],9:[164,78],10:[178,54]}), o(GF_B, {0:[156,62],1:[162,74],2:[146,94],3:[128,114]}), 2),
-    K(o(GF_A, {6:[122,112],2:[118,96],3:[146,74],4:[120,100],5:[150,78],7:[146,70],8:[170,56],9:[160,82],10:[176,58]}), o(GF_B, {0:[146,74],1:[154,84],2:[142,102],3:[128,116]}), 3, { hl: ["b", 0] })] }; }
-{ const b0 = o(GF_B, {2:[140,112],3:[120,140]});
-  const sit = o(GF_A, {0:[98,98],1:[108,110],2:[110,126],3:[120,138],4:[100,124],5:[90,140],7:[150,104],8:[176,112],9:[146,110],10:[172,120]});
-  TA["Kimura da guarda"] = { me: "a", front: "a", keys: [
-    K(GF_A, b0, 0), K(sit, b0, 1),
-    K(o(sit, {4:[142,104],5:[124,134]}), b0, 2),
-    K(o(GF_A, {2:[120,108],3:[164,92],4:[132,96],5:[166,94],7:[152,100],8:[190,108],9:[148,106],10:[186,114]}), o(GF_B, {0:[140,70],1:[150,80],2:[140,104],3:[166,90]}), 3, { hl: ["b", 1] })] }; }
-{ const b2 = [[110,130],[130,126],[150,110],[166,100],[140,132],[124,140],[180,112],[196,138],[224,140],[188,138],[216,140]];
-  TA["Omoplata"] = { me: "a", front: "a", keys: [
-    K(o(GF_A, {2:[104,114],3:[134,116],7:[150,110],8:[172,106]}), GF_B, 0),
-    K(o(GF_A, {0:[62,126],2:[100,116],3:[134,112],7:[156,60],8:[172,84],9:[160,100],10:[190,104]}), o(GF_B, {0:[124,104],1:[140,96],2:[156,96],3:[140,112]}), 1),
-    K([[178,90],[170,104],[178,112],[184,112],[176,116],[188,116],[152,134],[138,112],[118,120],[132,124],[112,134]], b2, 2),
-    K([[126,92],[140,98],[160,102],[178,108],[156,106],[176,112],[162,134],[130,114],[106,124],[124,124],[100,134]], b2, 3, { hl: ["b", 1] })] }; }
-{ const a0 = [[118,82],[116,96],[106,112],[118,124],[104,120],[96,140],[124,128],[154,108],[184,112],[150,116],[180,122]];
-  TA["Raspagem de quadril"] = { me: "a", front: "a", keys: [
-    K(a0, GF_B, 0), K(o(a0, {2:[140,74],3:[166,72]}), GF_B, 1),
-    K([[142,74],[138,88],[150,70],[170,66],[110,118],[100,140],[146,116],[166,112],[190,118],[156,122],[184,132]], o(GF_B, {0:[182,54],1:[180,70],2:[170,88],3:[160,104],6:[188,106]}), 2),
-    K(mirror(MONT_B), mirror(MONT_A), 3)] }; }
-{ const k0 = o(GF_A, {3:[160,70],5:[140,112],4:[110,118]});
-  const k1 = o(k0, {0:[52,130],1:[70,128],6:[118,126],4:[106,118],7:[166,88],8:[148,100],9:[156,136],10:[186,140]});
-  TA["Raspagem tesoura"] = { me: "a", front: "a", keys: [
-    K(k0, GF_B, 0), K(k1, GF_B, 1),
-    K(o(k1, {3:[140,80],2:[104,104]}), o(GF_B, {0:[140,62],1:[150,72],6:[176,100],2:[136,92],3:[124,114]}), 2),
-    K(mirror(MONT_B), mirror(MONT_A), 3)] }; }
-{ const k0 = o(GF_A, {2:[104,114],3:[134,118],7:[154,112],8:[180,124],9:[150,118],10:[176,132]});
-  TA["Arm drag para as costas"] = { me: "a", front: "a", keys: [
-    K(k0, GF_B, 0),
-    K(o(k0, {3:[102,120],2:[96,112],4:[110,108],5:[126,110]}), o(GF_B, {0:[136,72],1:[148,80],2:[124,112],3:[100,122]}), 1),
-    K([[136,86],[130,100],[110,110],[100,122],[140,108],[150,96],[120,132],[152,124],[176,136],[146,128],[170,140]], o(GF_B, {0:[136,72],1:[148,80],2:[124,112],3:[104,122]}), 2),
-    K(CA, CV, 3, { front: "b", armsOver: "a" })] }; }
-{ TA["Estrangulamento cruzado"] = { me: "a", front: "a", keys: [
-    K(o(GF_A, {2:[120,90],3:[160,68]}), GF_B, 0),
-    K(o(GF_A, {2:[120,90],3:[160,68],4:[122,96],5:[162,74]}), GF_B, 1),
-    K(o(GF_A, {2:[108,104],3:[140,86],4:[112,110],5:[142,92]}), o(GF_B, {0:[132,80],1:[142,88],2:[134,104],3:[126,120]}), 2),
-    K(o(GF_A, {2:[102,94],3:[138,84],4:[112,120],5:[140,90]}), o(GF_B, {0:[128,84],1:[140,90],2:[132,106],3:[126,122]}), 3, { hl: ["b", 0] })] }; }
-// --- Guarda aberta
-{ const BF_A = [[114,84],[112,98],[150,96],[168,86],[126,112],[142,100],[120,134],[146,112],[168,118],[140,118],[164,124]];
-  const BF_B = [[180,54],[178,70],[160,90],[140,100],[170,90],[150,104],[184,108],[170,138],[206,140],[178,138],[214,140]];
-  const k2a = o(BF_A, {0:[86,108],1:[96,118],2:[130,104],3:[156,92],4:[120,112],5:[148,104],6:[124,134]});
-  TA["Raspagem de gancho"] = { me: "a", front: "a", keys: [
-    K(BF_A, BF_B, 0), K(o(BF_A, {5:[150,104]}), BF_B, 1),
-    K(k2a, o(BF_B, {0:[140,70],1:[150,80],2:[132,96],3:[116,108],6:[180,104]}), 2),
-    K(o(k2a, {7:[146,80],8:[162,70]}), [[104,104],[120,96],[110,112],[98,120],[116,110],[104,124],[150,80],[170,64],[196,70],[164,70],[188,80]], 3),
-    K(CEM_B, BOT, 3)] }; }
-{ const b0 = mv(GA_B, -20, 0);
-  const k1 = [[128,90],[132,104],[152,120],[172,136],[148,124],[168,140],[124,130],[150,100],[172,92],[146,106],[170,104]];
-  TA["Raspagem de tornozelo"] = { me: "a", front: "a", keys: [
-    K(o(GA_A, {8:[172,90],10:[170,104]}), b0, 0), K(k1, b0, 1),
-    K(o(k1, {7:[158,96],8:[190,82],9:[154,102],10:[188,96]}), [[230,74],[214,84],[204,100],[196,112],[208,104],[200,116],[196,108],[190,124],[180,140],[198,124],[196,140]], 2),
-    K([[166,62],[170,76],[180,96],[186,112],[176,96],[182,116],[158,112],[146,140],[120,142],[164,140],[140,142]], [[250,132],[234,130],[222,114],[214,106],[226,120],[216,112],[190,130],[176,108],[160,138],[184,114],[168,140]], 3)] }; }
-{ const b1 = [[218,82],[214,96],[200,110],[190,120],[208,112],[196,124],[206,132],[186,112],[170,126],[182,118],[166,132]];
-  TA["Berimbolo"] = { me: "a", front: "a", keys: [
-    K(o(GA_A, {3:[150,100]}), GA_B, 0),
-    K(o(GA_A, {3:[160,104],7:[150,100],8:[180,104],9:[146,108],10:[176,116]}), b1, 1),
-    K([[136,138],[150,134],[166,122],[184,116],[162,126],[180,122],[168,98],[196,94],[222,104],[190,102],[214,112]], o(b1, {0:[222,86],1:[216,100]}), 2),
-    K(mv(CA, 36, 0), mv(CV, 36, 0), 3, { front: "b", armsOver: "a" })] }; }
-{ const a1 = o(GA_A, {7:[148,120],8:[172,134],9:[144,126],10:[168,140]});
-  TA["Passagem toreando"] = { me: "b", front: "b", keys: [
-    K(GA_A, o(GA_B, {3:[140,96],5:[136,104]}), 0),
-    K(a1, o(GA_B, {0:[160,70],1:[170,80],2:[160,100],3:[150,122],4:[156,106],5:[146,128]}), 1),
-    K(a1, [[134,80],[146,86],[140,104],[128,118],[150,106],[140,122],[172,96],[170,120],[166,140],[190,118],[198,140]], 2),
-    K(BOT, CEM_B, 3)] }; }
-{ const OU_A = [[58,132],[76,129],[96,114],[108,104],[94,122],[106,112],[118,126],[140,96],[160,72],[146,104],[168,88]];
-  const OU_B = [[150,74],[160,84],[146,104],[134,96],[150,92],[142,110],[186,104],[174,138],[212,140],[186,138],[220,140]];
-  const a1 = o(OU_A, {6:[104,108],7:[124,80],8:[150,66],9:[130,88],10:[160,74]});
-  const b1 = o(OU_B, {0:[116,98],1:[130,94],2:[124,82],3:[132,70],4:[120,104],5:[110,100],6:[176,104]});
-  TA["Passagem por baixo"] = { me: "b", front: "b", keys: [
-    K(OU_A, OU_B, 0), K(a1, b1, 1), K(a1, o(b1, {6:[166,100],7:[160,138],8:[196,140]}), 2), K(BOT, CEM_B, 3)] }; }
-// --- Meia-guarda
-TA["Passagem de joelho"] = { me: "b", front: "b", keys: [
-  K(MEIA_A, MEIA_B, 0),
-  K(MEIA_A, o(MEIA_B, {6:[172,104],7:[164,124],8:[196,136]}), 1),
-  K(o(MEIA_A, {7:[166,116],8:[194,128]}), o(MEIA_B, {0:[98,108],1:[114,110],6:[160,112],7:[140,140],8:[178,138]}), 2),
-  K(BOT, CEM_B, 3)] };
-{ const a1 = o(MEIA_A, {0:[130,104],1:[124,114],2:[140,108],3:[156,104],4:[156,128],5:[176,138],6:[140,130]});
-  TA["Raspagem velha"] = { me: "a", front: "b", keys: [
-    K(o(MEIA_A, {2:[110,116],3:[138,104]}), MEIA_B, 0),
-    K(a1, MEIA_B, 1, { front: "a" }),
-    K(o(a1, {0:[150,92],1:[144,102],2:[160,96],3:[172,90]}), o(MEIA_B, {0:[190,68],1:[178,80],2:[166,96],3:[160,110],4:[184,96],5:[176,112],6:[176,112]}), 2, { front: "a" }),
-    K(mirror(CEM_B), mirror(BOT), 3, { front: "a" })] }; }
-TA["Costas pela meia-guarda"] = { me: "a", front: "b", keys: [
-  K(o(MEIA_A, {2:[110,116],3:[138,104]}), MEIA_B, 0),
-  K([[134,118],[148,120],[160,108],[170,100],[150,128],[164,124],[190,130],[214,118],[232,134],[206,126],[226,140]], MEIA_B, 1),
-  K(TART_B, TART_A, 2, { front: "a" }),
-  K(o(TART_B, {7:[200,118],8:[184,126]}), TART_A, 3, { front: "a" })] };
-// --- 100 kg
-{ const a0 = o(BOT, {2:[106,112],3:[92,118]});
-  TA["Americana"] = { me: "b", front: "b", keys: [
-    K(a0, o(CEM_B, {2:[102,104],3:[92,116]}), 0),
-    K(a0, o(CEM_B, {2:[102,104],3:[92,116],4:[112,124],5:[96,120]}), 1),
-    K(o(BOT, {2:[116,112],3:[102,124]}), o(CEM_B, {2:[108,108],3:[102,122],4:[118,122],5:[104,124]}), 2),
-    K(o(BOT, {2:[118,102],3:[102,124]}), o(CEM_B, {2:[108,108],3:[102,122],4:[118,106],5:[104,122]}), 3, { hl: ["a", 1] })] }; }
-{ const a0 = o(BOT, {2:[110,110],3:[116,96]}), b1 = o(CEM_B, {2:[110,100],3:[116,96],4:[124,108],5:[114,98]});
-  TA["Kimura do 100 kg"] = { me: "b", front: "b", keys: [
-    K(a0, o(CEM_B, {2:[110,100],3:[116,96]}), 0), K(a0, b1, 1),
-    K(a0, o(b1, {6:[146,96],7:[100,110],8:[74,138]}), 2),
-    K(o(BOT, {2:[116,106],3:[136,120]}), o(CEM_B, {2:[122,104],3:[136,118],4:[128,110],5:[134,116],6:[146,96],7:[100,110],8:[74,138]}), 3, { hl: ["a", 1] })] }; }
-{ const a0 = o(BOT, {2:[98,114],3:[104,108],4:[126,116],5:[146,108]});
-  TA["Fuga do 100 kg"] = { me: "a", front: "b", keys: [
-    K(a0, CEM_B, 0),
-    K(o(a0, {6:[160,118],7:[180,100],9:[174,108]}), mv(CEM_B, 0, -6), 1),
-    K(o(a0, {6:[182,132],7:[166,108],8:[180,136],9:[172,116],10:[192,140]}), CEM_B, 2),
-    K(o(a0, {6:[176,132],7:[142,104],8:[156,114],9:[168,114],10:[188,138]}), o(CEM_B, {0:[110,100],1:[124,104],6:[160,96]}), 3, { front: "a" })] }; }
-// --- Montada
-{ const b0 = o(MONT_B, {0:[106,56],1:[108,70],6:[110,108],7:[90,132],8:[128,136],9:[98,134],10:[138,140]});
-  const a1 = o(MONT_A, {2:[98,104],3:[106,88]});
-  TA["Armlock da montada"] = { me: "b", front: "b", keys: [
-    K(MONT_A, b0, 0),
-    K(a1, o(b0, {2:[94,92],3:[106,88],4:[118,92],5:[108,86]}), 1),
-    K(a1, [[118,58],[116,72],[100,86],[106,88],[120,90],[108,86],[104,114],[76,116],[56,138],[98,134],[138,140]], 2),
-    K(o(MONT_A, {2:[98,100],3:[106,80]}), [[160,130],[144,128],[126,100],[108,82],[130,104],[110,84],[96,134],[80,112],[56,132],[100,106],[118,96]], 3, { hl: ["a", 2] })] }; }
-{ const b0 = o(MONT_B, {0:[96,82],1:[102,92],2:[80,118],3:[64,130]});
-  TA["Ezequiel"] = { me: "b", front: "b", keys: [
-    K(MONT_A, b0, 0), K(MONT_A, o(b0, {4:[90,108],5:[80,120]}), 1), K(MONT_A, o(b0, {4:[94,116],5:[74,128]}), 2),
-    K(o(MONT_A, {0:[72,128]}), o(b0, {0:[90,100],1:[98,104],2:[82,122],4:[90,120],5:[74,128]}), 3, { hl: ["a", 0] })] }; }
-{ const a0 = o(MONT_A, {2:[90,126],3:[98,116],7:[160,114],8:[150,140]});
-  TA["Fuga da montada: upa"] = { me: "a", front: "b", keys: [
-    K(a0, MONT_B, 0),
-    K(o(a0, {6:[146,108],7:[164,96],9:[164,104]}), o(MONT_B, {0:[92,74],1:[100,84],6:[124,94],2:[94,100],3:[96,116]}), 1),
-    K([[92,108],[102,118],[94,124],[96,120],[110,114],[120,108],[146,120],[168,108],[160,140],[166,114],[176,140]], [[74,110],[86,104],[96,114],[96,120],[94,100],[104,92],[120,92],[146,78],[164,90],[140,84],[160,98]], 2),
-    K(GF_B, GF_A, 3)] }; }
-TA["Fuga da montada: cotovelo-joelho"] = { me: "a", front: "b", keys: [
-  K(o(MONT_A, {6:[146,122],7:[170,104],9:[166,110]}), mv(MONT_B, 0, -6), 0),
-  K(o(MONT_A, {6:[156,132],2:[100,118],3:[112,112]}), MONT_B, 1),
-  K(o(MONT_A, {6:[150,132],7:[118,122],8:[140,132],2:[100,118],3:[112,112]}), o(MONT_B, {9:[104,136]}), 2, { front: "a" }),
-  K(GF_A, GF_B, 3, { front: "a" })] };
-// --- Costas
-TA["Mata-leão"] = { me: "b", front: "a", armsOver: "b", keys: [
-  K(CV, CA, 0),
-  K(CV, o(CA, {2:[152,92],3:[164,78]}), 1),
-  K(CV, o(CA, {2:[152,92],3:[160,80],4:[136,78],5:[142,68]}), 2),
-  K(o(CV, {0:[140,76]}), o(CA, {0:[126,80],1:[128,96],2:[148,92],3:[156,80],4:[132,78],5:[138,68]}), 3, { hl: ["a", 0] })] };
-{ const a1 = o(CV, {7:[178,112]});
-  TA["Arco e flecha"] = { me: "b", front: "a", armsOver: "b", keys: [
-    K(CV, o(CA, {2:[150,92],3:[158,84]}), 0),
-    K(a1, o(CA, {2:[150,92],3:[158,84],4:[154,106],5:[176,112]}), 1),
-    K(o(a1, {0:[132,84],1:[140,98]}), [[94,128],[108,128],[126,110],[142,98],[140,120],[172,114],[124,138],[140,80],[164,70],[150,118],[170,128]], 2, { front: "b", armsOver: null }),
-    K(o(a1, {0:[124,90],1:[136,100]}), [[94,128],[108,128],[110,112],[120,100],[140,120],[172,114],[124,138],[150,84],[182,82],[150,118],[170,128]], 3, { front: "b", armsOver: null, hl: ["a", 0] })] }; }
-{ const a1 = [[116,134],[130,130],[140,112],[146,100],[144,116],[150,104],[176,132],[200,112],[222,138],[194,118],[216,140]];
-  const b1 = [[98,120],[110,124],[130,118],[150,112],[124,130],[146,126],[130,138],[164,120],[182,128],[160,124],[178,134]];
-  TA["Fuga das costas"] = { me: "a", front: "a", armsOver: "b", keys: [
-    K(o(CV, {3:[146,86],5:[150,88]}), CA, 0), K(a1, b1, 1), K(o(a1, {0:[102,138],1:[118,136]}), b1, 2),
-    K(GF_B, GF_A, 3, { front: "b", armsOver: null })] }; }
-// --- Em pé (azul aplica)
-TA["Baiana"] = { me: "a", front: "a", keys: [
-  K([[116,64],[118,78],[132,92],[146,98],[130,98],[144,104],[108,108],[126,124],[128,140],[96,126],[88,140]], ST_B, 0),
-  K([[172,84],[156,92],[184,104],[200,116],[182,110],[198,122],[122,112],[168,140],[138,142],[108,122],[96,140]], ST_B, 1),
-  K([[178,88],[156,92],[184,104],[200,116],[182,110],[198,122],[122,112],[168,140],[138,142],[108,122],[96,140]], mv(ST_B, 8, 4, UP), 2),
-  K([[222,112],[208,116],[196,104],[184,92],[200,110],[188,100],[168,118],[150,140],[122,142],[160,140],[132,142]], [[250,132],[234,130],[222,114],[212,108],[226,120],[214,114],[186,130],[176,96],[160,90],[170,104],[154,100]], 3)] };
-{ const k1 = o(STAND, {0:[134,42],1:[130,56],2:[146,66],3:[164,60],4:[146,74],5:[166,76],6:[124,96],9:[134,118],10:[144,140]});
-  TA["O-soto-gari"] = { me: "a", front: "a", keys: [
-    K(STAND, ST_B, 0), K(k1, mv(ST_B, 6, 0, UP), 1),
-    K(o(k1, {7:[166,108],8:[200,124]}), mv(ST_B, 8, 0, UP), 2),
-    K(o(k1, {0:[150,56],1:[142,66],2:[160,72],3:[178,72],4:[160,80],5:[180,84],7:[170,100],8:[206,96]}), [[232,96],[220,94],[204,82],[190,78],[206,88],[192,86],[190,110],[176,92],[160,78],[170,100],[150,90]], 3)] }; }
-TA["Puxada de guarda"] = { me: "a", front: "a", keys: [
-  K(STAND, ST_B, 0),
-  K(o(STAND, {7:[150,86],8:[180,96]}), ST_B, 1),
-  K([[130,86],[136,100],[156,86],[176,70],[158,92],[178,78],[150,136],[172,104],[186,98],[162,120],[180,136]], mv(ST_B, 0, 6, UP), 2),
-  K(GF_A, GF_B, 3)] };
-// --- Joelho na barriga, norte-sul, tartaruga
-{ const JA = o(BOT, {2:[118,116],3:[138,118],4:[114,122],5:[134,124]});
-  TA["Armlock do joelho na barriga"] = { me: "b", front: "b", keys: [
-    K(JA, JNB_B, 0), K(JA, o(JNB_B, {2:[138,100],3:[136,116]}), 1),
-    K(o(JA, {3:[132,112]}), o(JNB_B, {2:[136,98],3:[132,112],6:[130,92],0:[124,48],1:[128,62],9:[100,108],10:[76,132]}), 2),
-    K(o(BOT, {2:[108,100],3:[116,82]}), [[166,132],[150,130],[132,102],[116,84],[136,106],[118,86],[108,136],[92,112],[70,130],[108,106],[122,96]], 3, { hl: ["a", 2] })] }; }
-{ const b0 = o(NS_B, {2:[136,132],3:[150,138]});
-  TA["Estrangulamento norte-sul"] = { me: "b", front: "b", keys: [
-    K(NS_A, b0, 0), K(NS_A, o(b0, {1:[140,118]}), 1), K(NS_A, o(b0, {1:[140,118],4:[134,128],5:[148,134]}), 2),
-    K(NS_A, o(b0, {0:[126,120],1:[142,122],2:[136,134],4:[134,130],5:[148,136],6:[198,124]}), 3, { hl: ["a", 0] })] }; }
-{ const b1 = o(TART_B, {3:[112,128],4:[138,118],5:[124,130]});
-  const b2 = o(b1, {0:[130,98],1:[140,104],2:[126,116],6:[200,118],7:[226,132],8:[256,140],9:[222,136],10:[250,140]});
-  TA["Clock choke"] = { me: "b", front: "b", keys: [
-    K(TART_A, o(TART_B, {3:[112,128]}), 0), K(TART_A, b1, 1), K(TART_A, b2, 2),
-    K(o(TART_A, {0:[112,128],1:[126,122]}), o(b2, {0:[124,100],1:[134,106],6:[190,120],7:[214,134],8:[240,140],9:[210,138],10:[236,140]}), 3, { hl: ["a", 0] })] }; }
-{ const b1 = o(TART_B, {3:[130,124],5:[132,126]}), b2 = o(b1, {1:[150,98],0:[140,90],6:[196,100]});
-  TA["Cinto de segurança na tartaruga"] = { me: "b", front: "b", keys: [
-    K(TART_A, TART_B, 0), K(TART_A, b1, 1), K(TART_A, b2, 2), K(TART_A, o(b2, {7:[200,118],8:[184,126]}), 3)] }; }
-
-/* ---------- ANIMATION ENGINE (shared sampling) ---------- */
-const HOLD = 900, TRANS = 1000;
-const ease = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
-const lerpF = (f1, f2, k) => f1.map((p, i) => [p[0] + (f2[i][0] - p[0]) * k, p[1] + (f2[i][1] - p[1]) * k]);
-function sample(clip, t) {
-  const keys = clip.keys, n = keys.length, H = clip.hold ?? HOLD, TR = clip.trans ?? TRANS, per = H + TR, tot = n * per;
-  const tt = ((t % tot) + tot) % tot, i = Math.floor(tt / per), ph = tt - i * per, j = (i + 1) % n;
-  const e = ph < H ? 0 : ease((ph - H) / TR);
-  const ki = keys[i], kj = keys[j], cur = e < .5 ? ki : kj;
-  const pick = (k, f) => (f in k ? k[f] : clip[f]);
-  return { A: lerpF(ki.a, kj.a, e), B: lerpF(ki.b, kj.b, e), step: cur.s,
-    front: pick(cur, "front") || "a", armsOver: pick(cur, "armsOver"),
-    hl: e < .5 ? ki.hl : (e > .85 ? kj.hl : null), hlA: e < .5 ? 1 - e * 2 : (e - .85) / .15 };
-}
-const reduceMotion = (() => { try { return matchMedia("(prefers-reduced-motion: reduce)").matches; } catch { return false; } })();
-
-/* ---------- 2D fallback renderer ---------- */
-const GI2 = { blue: { main: "var(--gi-blue)", far: "var(--gi-blue-far)", out: "var(--gi-blue-out)" }, white: { main: "var(--gi-white)", far: "var(--gi-white-far)", out: "var(--gi-white-out)" } };
-const r1 = v => v.toFixed(1);
-const L2 = (f, a, b, w, c) => `<line x1="${r1(f[a][0])}" y1="${r1(f[a][1])}" x2="${r1(f[b][0])}" y2="${r1(f[b][1])}" stroke="${c}" stroke-width="${w}" stroke-linecap="round"/>`;
-const dots = (f, idx) => idx.map(i => `<circle cx="${r1(f[i][0])}" cy="${r1(f[i][1])}" r="4" fill="var(--skin)" stroke="var(--skin-out)" stroke-width="1"/>`).join("");
-function fig2(f, gi, armsOnly) {
-  let s = "";
-  const limb = (list, col) => list.forEach(([a, b, w]) => { s += L2(f, a, b, w + 3, gi.out) + L2(f, a, b, w, col); });
-  if (armsOnly) { limb([[1,4,8.5],[4,5,7.5],[1,2,8.5],[2,3,7.5]], gi.main); return s + dots(f, [3, 5]); }
-  limb([[1,4,8.5],[4,5,7.5],[6,9,11],[9,10,9]], gi.far); s += dots(f, [5, 10]);
-  const [sx, sy] = f[1], [px, py] = f[6], vx = sx - px, vy = sy - py, len = Math.hypot(vx, vy) || 1, nx = -vy / len, ny = vx / len;
-  const [hx, hy] = f[0], dl = Math.hypot(hx - sx, hy - sy) || 1, ux = (hx - sx) / dl, uy = (hy - sy) / dl;
-  s += L2(f, 0, 1, 9, "var(--skin-out)") + L2(f, 0, 1, 7, "var(--skin)");
-  s += L2(f, 1, 6, 20, gi.out) + L2(f, 1, 6, 17, gi.main);
-  const bx = px + vx * .18, by = py + vy * .18;
-  s += `<line x1="${r1(bx - nx * 9.5)}" y1="${r1(by - ny * 9.5)}" x2="${r1(bx + nx * 9.5)}" y2="${r1(by + ny * 9.5)}" stroke="var(--belt-black)" stroke-width="5"/>`;
-  s += `<line x1="${r1(sx + nx * 3)}" y1="${r1(sy + ny * 3)}" x2="${r1(bx - nx * 2)}" y2="${r1(by - ny * 2)}" stroke="${gi.out}" stroke-width="1.5" opacity=".5"/>`;
-  s += `<circle cx="${r1(hx)}" cy="${r1(hy)}" r="10.2" fill="var(--skin-out)"/><circle cx="${r1(hx)}" cy="${r1(hy)}" r="9" fill="var(--skin)"/>`;
-  s += `<circle cx="${r1(hx + ux * 2.6)}" cy="${r1(hy + uy * 2.6)}" r="8" fill="var(--hair)"/>`;
-  limb([[6,7,11],[7,8,9],[1,2,8.5],[2,3,7.5]], gi.main); s += dots(f, [3, 8]);
-  return s;
-}
-function shadow2(f) { const xs = f.filter(p => p[1] > 126).map(p => p[0]); if (!xs.length) return ""; const a = Math.min(...xs), b = Math.max(...xs); return `<ellipse cx="${r1((a + b) / 2)}" cy="147" rx="${r1((b - a) / 2 + 12)}" ry="3.5" fill="var(--ink)" opacity=".1"/>`; }
-function scene2(s, me, now) {
-  const blueA = me !== "b", ga = blueA ? GI2.blue : GI2.white, gb = blueA ? GI2.white : GI2.blue;
-  let out = `<rect x="0" y="146" width="300" height="14" fill="var(--mat-soft)"/><line x1="0" y1="146" x2="300" y2="146" stroke="var(--mat)" stroke-width="1.5" opacity=".5"/>` + shadow2(s.A) + shadow2(s.B);
-  const FA = fig2(s.A, ga), FB = fig2(s.B, gb);
-  out += s.front === "a" ? FB + FA : FA + FB;
-  if (s.armsOver === "a") out += fig2(s.A, ga, true);
-  if (s.armsOver === "b") out += fig2(s.B, gb, true);
-  if (s.hl && s.hlA > 0) { const p = (s.hl[0] === "a" ? s.A : s.B)[s.hl[1]]; out += `<circle cx="${r1(p[0])}" cy="${r1(p[1])}" r="${r1(12 + 3 * Math.sin(now / 160))}" fill="none" stroke="var(--danger)" stroke-width="2.5" opacity="${s.hlA.toFixed(2)}"/>`; }
-  return out;
-}
-
-/* ---------- 3D renderer (one WebGL context, copied into each view's canvas) ---------- */
-const R3 = { ok: false };
-const W3 = 960, H3 = 512;
-function init3D() {
-  if (!window.THREE) return;
-  try {
-    const T3 = THREE;
-    const renderer = new T3.WebGLRenderer({ antialias: true });
-    renderer.setPixelRatio(1); renderer.setSize(W3, H3, false);
-    renderer.shadowMap.enabled = true; renderer.shadowMap.type = T3.PCFSoftShadowMap;
-    renderer.outputEncoding = T3.sRGBEncoding;
-    const scene = new T3.Scene();
-    const camera = new T3.PerspectiveCamera(32, W3 / H3, 1, 200);
-    scene.add(new T3.HemisphereLight(0xffffff, 0x7a8a99, 0.75));
-    const sun = new T3.DirectionalLight(0xffffff, 0.85);
-    sun.position.set(8, 22, 14); sun.castShadow = true;
-    sun.shadow.mapSize.set(1024, 1024);
-    Object.assign(sun.shadow.camera, { left: -18, right: 18, top: 14, bottom: -14, near: 1, far: 60 });
-    scene.add(sun);
-    const floor = new T3.Mesh(new T3.PlaneGeometry(80, 40), new T3.MeshStandardMaterial({ color: new T3.Color(0x2f7d63).convertSRGBToLinear(), roughness: 0.95 }));
-    floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
-    scene.fog = new T3.Fog(0xffffff, 45, 90);
-    const grid = new T3.GridHelper(80, 40, 0x1f5a46, 0x1f5a46); grid.position.y = 0.01; grid.material.opacity = 0.35; grid.material.transparent = true; scene.add(grid);
-    const lin = c => new T3.Color(c).convertSRGBToLinear();
-    const M = (c, r = 0.85) => new T3.MeshStandardMaterial({ color: lin(c), roughness: r });
-    const mats = { blue: M(0x2a55c4), white: M(0xf3f2ee, 0.9), skin: M(0xd59b74, 0.7), hair: M(0x2b1e16, 0.8), belt: M(0x161616, 0.6),
-      hl: new T3.MeshBasicMaterial({ color: 0xe0352b, transparent: true, opacity: 0.35, depthWrite: false }) };
-    const UPV = new T3.Vector3(0, 1, 0);
-    const geoC = new T3.CylinderGeometry(1, 1, 1, 16), geoS = new T3.SphereGeometry(1, 20, 14);
-    const geoT = new T3.CylinderGeometry(1.15, 0.95, 1, 18);
-    function mesh(geo, mat, sc = 1) { const m = new T3.Mesh(geo, mat); m.castShadow = true; m.userData.r = sc; scene.add(m); return m; }
-    function makeFig() {
-      const f = { gi: [], skin: [] };
-      const g = (geo, r) => { const m = mesh(geo, mats.blue, r); f.gi.push(m); return m; };
-      f.torso = g(geoT, 1);
-      f.shBar = g(geoC, 0.52); f.hipBar = g(geoC, 0.64);
-      f.belt = mesh(geoC, mats.belt, 1.13);
-      f.neck = mesh(geoC, mats.skin, 0.34);
-      f.head = mesh(geoS, mats.skin, 0.95); f.hair = mesh(geoS, mats.hair, 0.86);
-      f.limbs = [];
-      [[0.45, 0.38, 0.36], [0.6, 0.5, 0.42]].forEach(([r1_, r2_, rEnd], legs) => {
-        [1, -1].forEach(side => {
-          f.limbs.push({ legs, side, up: g(geoC, r1_), joint: g(geoS, r1_ * 0.98), low: g(geoC, r2_), root: g(geoS, r1_), end: mesh(geoS, mats.skin, rEnd) });
-        });
-      });
-      return f;
-    }
-    const figs = [makeFig(), makeFig()];
-    const hlMesh = new T3.Mesh(geoS, mats.hl); scene.add(hlMesh);
-    const v = (p, z) => new T3.Vector3((p[0] - 150) / 10, Math.max(0.35, (146 - p[1]) / 10), z);
-    const tmp = new T3.Vector3();
-    function seg(m, a, b) {
-      tmp.copy(b).sub(a); const len = tmp.length() || 0.001;
-      m.position.copy(a).addScaledVector(tmp, 0.5);
-      m.scale.set(m.userData.r, len, m.userData.r);
-      m.quaternion.setFromUnitVectors(UPV, tmp.multiplyScalar(1 / len));
-    }
-    function ball(m, p) { m.position.copy(p); m.scale.setScalar(m.userData.r); }
-    function pose(F, f, giMat) {
-      F.gi.forEach(m => m.material = giMat);
-      const H = v(f[0], 0), S = v(f[1], 0), P = v(f[6], 0);
-      seg(F.torso, P, S);
-      seg(F.shBar, v(f[1], -1.45), v(f[1], 1.45));
-      seg(F.hipBar, v(f[6], -0.85), v(f[6], 0.85));
-      const bp = P.clone().lerp(S, 0.17), dir = S.clone().sub(P).normalize();
-      seg(F.belt, bp.clone().addScaledVector(dir, -0.2), bp.clone().addScaledVector(dir, 0.2));
-      seg(F.neck, S, H);
-      ball(F.head, H);
-      const hd = H.clone().sub(S).normalize();
-      ball(F.hair, H.clone().addScaledVector(hd, 0.28));
-      F.limbs.forEach(l => {
-        const near = l.side > 0;
-        const idx = l.legs ? (near ? [6, 7, 8] : [6, 9, 10]) : (near ? [1, 2, 3] : [1, 4, 5]);
-        const z0 = l.legs ? 0.85 * l.side : 1.45 * l.side, z1 = l.legs ? 0.95 * l.side : 1.45 * l.side, z2 = l.legs ? 0.95 * l.side : 1.15 * l.side;
-        const A = v(f[idx[0]], z0), B = v(f[idx[1]], z1), C = v(f[idx[2]], z2);
-        ball(l.root, A); seg(l.up, A, B); ball(l.joint, B); seg(l.low, B, C); ball(l.end, C);
-      });
-    }
-    let bg = null;
-    R3.render = (ctx, s, me, view, now) => {
-      if (!bg || R3.bgDirty) { bg = new T3.Color(getComputedStyle(document.body).getPropertyValue("--surface-2").trim() || "#f5f7fa").convertSRGBToLinear(); R3.bgDirty = false; scene.background = bg; scene.fog.color = bg; }
-      const blueA = me !== "b";
-      pose(figs[0], s.A, blueA ? mats.blue : mats.white);
-      pose(figs[1], s.B, blueA ? mats.white : mats.blue);
-      if (s.hl && s.hlA > 0) {
-        const p = (s.hl[0] === "a" ? s.A : s.B)[s.hl[1]];
-        hlMesh.visible = true; hlMesh.position.copy(v(p, 0)); hlMesh.scale.setScalar(1.3 + 0.25 * Math.sin(now / 160));
-        mats.hl.opacity = 0.4 * s.hlA;
-      } else hlMesh.visible = false;
-      const R = view.R, az = view.az, el = view.el;
-      camera.position.set(view.cx + Math.sin(az) * Math.cos(el) * R, view.cy + Math.sin(el) * R, Math.cos(az) * Math.cos(el) * R);
-      camera.lookAt(view.cx, view.cy, 0);
-      renderer.render(scene, camera);
-      ctx.drawImage(renderer.domElement, 0, 0, ctx.canvas.width, ctx.canvas.height);
-    };
-    R3.ok = true;
-  } catch (err) { R3.ok = false; }
-}
-try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => R3.bgDirty = true); new MutationObserver(() => R3.bgDirty = true).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] }); } catch {}
-
-/* ---------- Views: register, play/pause, steps ---------- */
-const anims = new Map();
-const io = "IntersectionObserver" in window ? new IntersectionObserver(es => es.forEach(e => { const st = anims.get(e.target); if (st) { st.vis = e.isIntersecting; st.dirty = true; } }), { rootMargin: "80px" }) : null;
-function registerAnim(stage, clip, root) {
-  if (!stage || !clip) return;
-  let el;
-  if (R3.ok) {
-    el = document.createElement("canvas"); el.className = "c3d";
-    el.setAttribute("role", "img"); el.setAttribute("aria-label", stage.dataset.label || "Animação em 3D");
-  } else {
-    el = document.createElementNS(NS, "svg"); el.setAttribute("viewBox", "0 0 300 160");
-    el.setAttribute("role", "img"); el.setAttribute("aria-label", stage.dataset.label || "Animação");
-  }
-  stage.replaceChildren(el);
-  const st = { clip, root, el, start: performance.now(), paused: reduceMotion, pt: 0, vis: !io, dirty: true, step: -1,
-    nsteps: Math.max(0, ...clip.keys.map(k => k.s ?? -1)) + 1, az: 0.55, el3: 0.32, userCam: false, last: 0, ...frameClip(clip) };
-  anims.set(el, st);
-  io?.observe(el);
-  if (R3.ok) attachOrbit(el, st);
-  syncBtn(st);
-  drawAnim(st, performance.now());
-}
-function frameClip(clip) {
-  let x0 = 1e9, x1 = -1e9, y0 = 1e9;
-  clip.keys.forEach(k => [k.a, k.b].forEach(f => f.forEach(([x, y]) => { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); })));
-  const w = (x1 - x0) / 10, h = (146 - y0) / 10;
-  return { cx: ((x0 + x1) / 2 - 150) / 10, cy: Math.max(1.8, h * 0.5), R: Math.min(32, Math.max(17, Math.max(w * 1.3, h * 2.4) + 5)) };
-}
-function attachOrbit(c, st) {
-  let drag = null;
-  c.addEventListener("pointerdown", e => { drag = { x: e.clientX, y: e.clientY, az: st.az, el: st.el3 }; c.setPointerCapture(e.pointerId); c.classList.add("dragging"); });
-  c.addEventListener("pointermove", e => {
-    if (!drag) return;
-    st.az = drag.az - (e.clientX - drag.x) * 0.012;
-    st.el3 = Math.min(1.2, Math.max(0.05, drag.el + (e.clientY - drag.y) * 0.006));
-    st.userCam = true; st.dirty = true;
-  });
-  const end = () => { drag = null; c.classList.remove("dragging"); };
-  c.addEventListener("pointerup", end); c.addEventListener("pointercancel", end);
-  c.addEventListener("dblclick", () => { st.az = 0.55; st.el3 = 0.32; st.userCam = false; st.dirty = true; });
-}
-function syncBtn(st) {
-  const b = st.root?.querySelector("[data-anim-toggle]");
-  if (b) { b.textContent = st.paused ? "▶ Animar" : "❚❚ Pausar"; b.setAttribute("aria-pressed", String(!st.paused)); }
-}
-function stateOf(stage) { const el = stage?.firstElementChild; return el ? anims.get(el) : null; }
-function toggleAnim(stage) {
-  const st = stateOf(stage); if (!st) return;
-  const now = performance.now();
-  if (st.paused) { st.start = now - st.pt; st.paused = false; } else { st.pt = now - st.start; st.paused = true; }
-  st.dirty = true; syncBtn(st);
-}
-function jumpAnim(stage, step) {
-  const st = stateOf(stage); if (!st) return;
-  const per = (st.clip.hold ?? HOLD) + (st.clip.trans ?? TRANS);
-  const i = Math.max(0, st.clip.keys.findIndex(k => k.s === step));
-  st.pt = i * per + 1; st.paused = true; st.dirty = true; syncBtn(st);
-}
-function drawAnim(st, now) {
-  const t = st.paused ? st.pt : Math.max(0, now - st.start);
-  const s = sample(st.clip, t);
-  if (R3.ok) {
-    const c = st.el, dpr = Math.min(2, window.devicePixelRatio || 1);
-    const w = Math.max(1, Math.round(c.clientWidth * dpr)), h = Math.round(w * H3 / W3);
-    if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
-    const view = { az: st.az + (st.userCam || st.paused || reduceMotion ? 0 : 0.28 * Math.sin(now / 4200)), el: st.el3, cx: st.cx, cy: st.cy, R: st.R };
-    R3.render(c.getContext("2d"), s, st.clip.me, view, now);
-  } else {
-    st.el.innerHTML = scene2(s, st.clip.me, now);
-  }
-  if (st.root && s.step != null && s.step !== st.step) {
-    st.step = s.step;
-    st.root.querySelectorAll("li[data-step]").forEach(li => li.classList.toggle("active", +li.dataset.step === s.step));
-    const cap = st.root.querySelector("[data-stepcap]");
-    if (cap) cap.textContent = `Passo ${s.step + 1} de ${st.nsteps}`;
-  }
-}
-function animLoop(now) {
-  for (const [el, st] of anims) {
-    if (!el.isConnected) { anims.delete(el); io?.unobserve(el); continue; }
-    if (!st.vis) continue;
-    if (st.paused && !st.dirty) continue;
-    if (R3.ok && !st.dirty && now - st.last < 33) continue;
-    drawAnim(st, now); st.dirty = false; st.last = now;
-  }
-  requestAnimationFrame(animLoop);
+/* ---------- VIDEOS (one suggested lesson per technique and position) ---------- */
+// [YouTube id, title as shown on YouTube, language]
+const VID = {
+  "Armlock da guarda": ["8kfVw8vy20k", "Arm Lock na Guarda Fechada", "PT"],
+  "Triângulo": ["WFW8W_BkSDc", "Triângulo da Guarda Fechada · Jorge Azevedo · BJJCLUB", "PT"],
+  "Kimura da guarda": ["EUCcQg9CVMQ", "Como finalizar na Kimura partindo da guarda fechada", "PT"],
+  "Omoplata": ["uAwPq60rSUg", "Omoplata: finalização e raspagem, 2 maneiras de aplicar", "PT"],
+  "Raspagem de quadril": ["3Ekj6-XZTu4", "Hip Bump Sweep everyone should know · Saulo Ribeiro", "EN"],
+  "Raspagem tesoura": ["63LRiI9Qn2o", "BJJ for Beginners: How to do the Scissor Sweep", "EN"],
+  "Arm drag para as costas": ["0kErXp8PqhY", "Jorge Britto ensina armdrag da guarda fechada", "PT"],
+  "Estrangulamento cruzado": ["iijeaSXKuxY", "Estrangulamento cruzado na guarda fechada para iniciantes", "PT"],
+  "Raspagem de gancho": ["V0C67lU5lNs", "Raspagem de Gancho · Adriano Silva · BJJCLUB", "PT"],
+  "Raspagem de tornozelo": ["WdfQHszMXCU", "Double ankle grab sweep against standing opponent", "EN"],
+  "Berimbolo": ["qYYTBhS2EEM", "João Miyao: 3 berimbolos para iniciantes", "PT"],
+  "Passagem toreando": ["mZV4BjaW4Rs", "Passagem Toreando · Felipe Cesar · BJJCLUB", "PT"],
+  "Passagem por baixo": ["LcFtB_6bKQY", "Passagem de guarda over under · Leonardo Cascão Saggioro", "PT"],
+  "Passagem de joelho": ["AMnli7iPK9Q", "Passagem de guarda Knee Cut", "PT"],
+  "Raspagem velha": ["CcZvlxqnU-E", "Old-School Sweep from Half Guard · BJJ Essentials", "EN"],
+  "Costas pela meia-guarda": ["1agE6qTqeQw", "Ida para as costas da meia guarda · Pedro Pedra · BJJCLUB", "PT"],
+  "Americana": ["YlLDZeB4YH0", "How To Do An Americana From Side Control", "EN"],
+  "Kimura do 100 kg": ["3gabwf6AGAQ", "Finalização Kimura dos 100 kg · Gabriel Bergami · BJJCLUB", "PT"],
+  "Fuga do 100 kg": ["kM6m79IPgbg", "Saída dos 100 kg repondo guarda", "PT"],
+  "Armlock da montada": ["Hh5oO3qjmYE", "Armlock da montada: juji gatame passo a passo para iniciantes", "PT"],
+  "Ezequiel": ["JrWczo1ximc", "Estrangulamento Ezequiel da montada", "PT"],
+  "Fuga da montada: upa": ["01Fe3N1vZMY", "Intro to BJJ: Upa, bridge and roll escape from mount", "EN"],
+  "Fuga da montada: cotovelo-joelho": ["7FdN70-BUfU", "Elbow Knee Escape: one of the most important techniques for beginners", "EN"],
+  "Mata-leão": ["m36vbaW9d3w", "Os segredos do mata-leão para iniciantes", "PT"],
+  "Arco e flecha": ["X5JIZ_gscPI", "Bow and Arrow Choke from Back Control · Casey Milliken", "EN"],
+  "Fuga das costas": ["dA6rYJd0IBE", "Saída das costas com os ganchos · Jiu-jitsu para iniciantes", "PT"],
+  "Baiana": ["FcUl4GvAuvE", "Queda Double Leg \"Baiana\" · Adriano Silva · BJJCLUB", "PT"],
+  "O-soto-gari": ["eNk6kFs27K4", "Joaquim Peixoto: judô e jiu-jitsu, O-Soto-Gari", "PT"],
+  "Puxada de guarda": ["5Kl4rBjOCwk", "Pare de puxar errado pra guarda!", "PT"],
+  "Armlock do joelho na barriga": ["dn1mfIKjQ34", "Armlock no braço distante, joelho na barriga", "PT"],
+  "Estrangulamento norte-sul": ["WQwbCDVKEjY", "BJJ Detail Explainer of the North South Choke", "EN"],
+  "Clock choke": ["tWoHRvetdf8", "2 Minute Jiu Jitsu Ep. 49: The Clock Choke", "EN"],
+  "Cinto de segurança na tartaruga": ["BH9QkaHnlnA", "Como atacar e defender na posição tartaruga", "PT"]
+};
+const POSVID = {
+  pe: ["LJ6Kpj2siRc", "Manual básico do faixa branca: luta em pé", "PT"],
+  guarda_fechada: ["e2gWZR16XMA", "Aprenda a fazer guarda fechada", "PT"],
+  guarda_aberta: ["6rJzd1Uism4", "Fundamentos de guarda no jiu-jitsu", "PT"],
+  meia: ["ZP6eavAmATU", "Recovering the underhook from bottom half guard", "EN"],
+  tartaruga: ["xsQi8ajPD9s", "Como sair dos 4 apoios no jiu-jitsu", "PT"],
+  norte_sul: ["EtSVay4G1mI", "Posição norte-sul: 4 opções · Prof. Ronaldo Mascarenhas", "PT"],
+  cem: ["IhuJ513Nl7k", "Como fazer e estabilizar o 100 kg", "PT"],
+  joelho: ["0G-p1b9BCpk", "Como fazer o joelho na barriga no jiu-jitsu", "PT"],
+  montada: ["Gq9mecwLtGk", "Os detalhes para manter a montada e aumentar a pressão", "PT"],
+  costas: ["OzZiyCW24aA", "Finalização das costas: controle e finalização", "PT"]
+};
+function videoTile(v, label) {
+  if (!v) return "";
+  const [id, title, lang] = v;
+  return `<a class="vtile" href="https://www.youtube.com/watch?v=${id}" target="_blank" rel="noopener" aria-label="Assistir no YouTube: ${esc(title)}">
+    <span class="vplay" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg></span>
+    <span class="vtext"><span class="vlabel">${esc(label)} <span class="vlang">${lang === "PT" ? "Português" : "Inglês"}</span></span><span class="vtitle">${esc(title)}</span><span class="vgo">Abrir no YouTube ↗</span></span>
+  </a>`;
 }
 const YT_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="4" style="fill:currentColor"/><path d="M10 9l5 3-5 3z" style="fill:var(--surface)"/></svg>`;
 function ytLink(q, label) {
@@ -1266,15 +786,7 @@ function initTech() {
   $("#q").addEventListener("input", e => { filt.q = e.target.value.trim().toLowerCase(); renderTech(); });
   $("#f-pos").addEventListener("change", e => { filt.pos = e.target.value; renderTech(); });
   $("#f-belt").addEventListener("change", e => { filt.belt = e.target.value; renderTech(); });
-  $("#tech-grid").addEventListener("keydown", e => {
-    const li = e.target.closest("li[data-step]");
-    if (li && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); jumpAnim(li.closest(".tech").querySelector(".stage"), +li.dataset.step); }
-  });
   $("#tech-grid").addEventListener("click", e => {
-    const tg = e.target.closest("[data-anim-toggle]");
-    if (tg) { toggleAnim(tg.closest(".tech").querySelector(".stage")); return; }
-    const li = e.target.closest("li[data-step]");
-    if (li) { jumpAnim(li.closest(".tech").querySelector(".stage"), +li.dataset.step); return; }
     const f = e.target.closest(".fav"); if (f) {
       const n = f.dataset.n; favs.has(n) ? favs.delete(n) : favs.add(n);
       store.set("favs", [...favs]); renderTech(); return;
@@ -1302,18 +814,11 @@ function renderTech() {
         <span class="chip">${t.t}</span>
         <span class="chip"><span class="mini-belt" style="background:${BELTS[BELT_KEY[t.b]].c}"></span> a partir da ${t.b}</span>
       </div>
-      <div class="anim tanim">
-        <div class="stage" data-clip="${esc(t.n)}" data-label="Animação: ${esc(t.n)}"></div>
-        <div class="anim-bar">
-          <span class="anim-cap"><i class="sw"></i>Azul aplica · <span data-stepcap>Passo 1 de ${t.s.length}</span>${R3.ok ? ` · arraste para girar` : ""}</span>
-          <button class="btn small" data-anim-toggle type="button">❚❚ Pausar</button>
-        </div>
-      </div>
-      <ol>${t.s.map((x, i) => `<li data-step="${i}" tabindex="0" title="Ver este passo">${esc(x)}</li>`).join("")}</ol>
+      ${videoTile(VID[t.n], "Vídeo da técnica")}
+      <ol>${t.s.map(x => `<li>${esc(x)}</li>`).join("")}</ol>
       <div class="key"><b>Detalhe-chave:</b> ${esc(t.k)}</div>
-      ${ytLink(t.n, "Assistir no YouTube")}
+      ${ytLink(t.n, "Mais vídeos desta técnica")}
     </article>`).join("") : `<div class="empty panel" style="grid-column:1/-1">Nenhuma técnica com esses filtros. Tente limpar a busca ou escolher outra posição.</div>`;
-  $$("#tech-grid .stage[data-clip]").forEach(st => registerAnim(st, TA[st.dataset.clip], st.closest(".tech")));
 }
 
 /* ---------- TIMER ---------- */
@@ -1530,11 +1035,9 @@ function calcBelt() {
 }
 
 /* ---------- BOOT ---------- */
-init3D();
 drawMap(); selectPos(POS[selPos] ? selPos : "guarda_fechada");
 initTech(); renderTech();
 initTimer(); initLog(); initBelts();
 route();
-requestAnimationFrame(animLoop);
 })();
 </script>
