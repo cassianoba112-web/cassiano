@@ -202,6 +202,21 @@ main { padding-block: 24px 64px; }
 .degrees button { width: 34px; height: 34px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); font-weight: 700; }
 .degrees button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
 
+/* Pose animation */
+.anim { margin: -4px -4px 14px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--line); overflow: hidden; }
+.anim svg { display: block; width: 100%; height: auto; }
+.anim-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 10px; border-top: 1px solid var(--line); flex-wrap: wrap; }
+.anim-cap { font-size: 13px; color: var(--muted); flex: 1 1 200px; min-width: 0; }
+.legend { display: flex; gap: 12px; font-size: 12px; color: var(--muted); padding: 8px 10px 0; }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -2px; margin-right: 4px; border: 1px solid var(--muted); }
+.yt { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--accent); text-decoration: none; }
+.yt:hover { text-decoration: underline; }
+.yt svg { width: 16px; height: 16px; flex: none; }
+.fig-blue { stroke: var(--belt-blue); }
+.fig-white { stroke: var(--belt-white); }
+.fig-out { stroke: var(--muted); }
+.fig-belt { stroke: var(--belt-black); }
+
 .toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 8px; font-weight: 600; z-index: 20; }
 
 @media (max-width: 860px) {
@@ -673,6 +688,14 @@ function renderPosDetail(id) {
   const techs = T.filter(t => t.pos === id);
   const linkBtn = (tid, txt, chip) => `<button data-go="${tid}"><span>${esc(txt)}</span>${chip ? `<span class="chip pts">${chip}</span>` : ""}</button>`;
   $("#pos-detail").innerHTML = `
+    <div class="anim">
+      <div class="legend"><span><i style="background:var(--belt-blue)"></i>Kimono azul</span><span><i style="background:var(--belt-white)"></i>Kimono branco</span></div>
+      <svg id="pose-svg" viewBox="0 0 300 160" role="img" aria-label="Animação da posição ${esc(p.n)}"></svg>
+      <div class="anim-bar">
+        <span class="anim-cap">${esc(POSES[id].cap)}</span>
+        <button class="btn small" id="anim-toggle" type="button">${animPaused ? "▶ Animar" : "❚❚ Pausar"}</button>
+      </div>
+    </div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="role ${p.role}">${roleTxt}</span>${p.pts ? `<span class="chip pts">${p.pts} pontos ao chegar</span>` : ""}</div>
     <h3 style="margin-top:8px">${esc(p.n)}</h3>
     <div class="alias">${esc(p.alias)}</div>
@@ -686,10 +709,113 @@ function renderPosDetail(id) {
     <div style="margin-top:14px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
       <span class="hint">${techs.length} técnica${techs.length !== 1 ? "s" : ""} desta posição na biblioteca</span>
       ${techs.length ? `<a class="btn small" href="#tecnicas" data-filter-pos="${id}">Ver técnicas</a>` : ""}
-    </div>`;
+    </div>
+    <div style="margin-top:10px">${ytLink(p.n + " " + (p.yt || "posição"), "Ver vídeos de " + p.n + " no YouTube")}</div>`;
+  $("#anim-toggle").addEventListener("click", e => { animPaused = !animPaused; e.currentTarget.textContent = animPaused ? "▶ Animar" : "❚❚ Pausar"; });
+  drawPose(animPaused ? 0.5 : animK);
   $$("#pos-detail [data-go]").forEach(b => b.addEventListener("click", () => selectPos(b.dataset.go)));
   const fl = $("#pos-detail [data-filter-pos]");
   if (fl) fl.addEventListener("click", () => { $("#f-pos").value = id; filt.pos = id; renderTech(); });
+}
+
+/* ---------- POSE ANIMATIONS ---------- */
+// joints: 0 head, 1 shoulder, 2 near elbow, 3 near hand, 4 far elbow, 5 far hand, 6 hip, 7 near knee, 8 near foot, 9 far knee, 10 far foot
+const mirror = f => f.map(([x, y]) => [300 - x, y]);
+const ov = (f, o) => f.map((pt, i) => o[i] || pt);
+const shift = (f, dx, dy, idx) => f.map((pt, i) => (!idx || idx.includes(i)) ? [pt[0] + dx, pt[1] + dy] : pt);
+const STAND = [[110,40],[112,55],[130,70],[150,62],[128,78],[152,78],[110,95],[118,118],[122,140],[100,118],[96,140]];
+const BOT = [[90,132],[106,130],[100,114],[112,106],[104,120],[116,112],[160,130],[180,110],[202,138],[174,118],[196,140]];
+const POSES = {
+  pe: { cap: "Disputa de pegada: os dois buscam gola e manga, procurando o desequilíbrio para a queda.",
+    a: [STAND, ov(shift(STAND, 10, 8, [0,1,2,3,4,5]), { 6: [116,98], 7: [128,120] })],
+    b: [mirror(STAND), mirror(shift(STAND, -4, 0))], front: "a" },
+  guarda_fechada: { cap: "Azul trancado na guarda puxa a gola e quebra a postura do branco, que tenta ficar reto.",
+    a: [[[58,130],[76,128],[110,100],[150,74],[112,108],[152,82],[130,126],[152,100],[190,108],[148,106],[186,114]],
+        [[58,130],[76,128],[100,108],[130,92],[102,114],[132,98],[130,126],[150,100],[188,108],[146,106],[184,114]]],
+    b: [[[160,48],[164,64],[150,88],[134,118],[156,92],[140,120],[176,104],[160,138],[204,140],[168,138],[210,140]],
+        [[128,80],[140,86],[132,104],[124,122],[138,108],[130,124],[176,104],[160,138],[204,140],[168,138],[210,140]]], front: "a" },
+  guarda_aberta: { cap: "Azul com os pés no quadril controla a distância; branco em pé segura os joelhos para passar.",
+    a: [[[58,132],[76,129],[100,112],[118,104],[98,120],[116,112],[120,125],[140,96],[168,90],[136,104],[166,104]],
+        [[58,132],[76,129],[100,112],[118,104],[98,120],[116,112],[120,125],[148,94],[180,90],[144,102],[178,104]]],
+    b: [[[166,50],[174,62],[160,80],[144,96],[166,84],[140,104],[196,90],[194,116],[200,140],[208,116],[216,140]],
+        shift([[166,50],[174,62],[160,80],[144,96],[166,84],[140,104],[196,90],[194,116],[200,140],[208,116],[216,140]], 12, 0)], front: "b" },
+  meia: { cap: "Branco por cima esmaga com o peito; azul de lado prende uma perna e luta pelo braço por baixo.",
+    a: [[[70,124],[86,121],[78,104],[96,96],[96,130],[112,126],[140,128],[170,120],[196,130],[164,132],[200,124]],
+        [[70,124],[86,121],[78,110],[92,104],[96,130],[112,126],[140,128],[170,120],[196,130],[164,132],[200,124]]],
+    b: [[[94,104],[108,108],[98,124],[82,130],[118,118],[110,132],[166,110],[186,134],[214,138],[152,138],[184,140]],
+        shift([[94,104],[108,108],[98,124],[82,130],[118,118],[110,132],[166,110],[186,134],[214,138],[152,138],[184,140]], -6, 5, [0,1,2,3,4,5])], front: "b" },
+  tartaruga: { cap: "Azul de quatro protege o pescoço; branco faz o cinto de segurança e entra o gancho.",
+    a: [[[110,118],[126,112],[124,128],[114,138],[120,130],[108,138],[176,108],[180,140],[206,140],[170,140],[198,140]],
+        [[110,120],[126,114],[124,128],[114,138],[120,130],[108,138],[176,110],[180,140],[206,140],[170,140],[198,140]]],
+    b: [[[146,84],[156,92],[140,106],[130,122],[150,108],[136,126],[204,96],[214,138],[242,140],[204,138],[232,140]],
+        [[146,86],[156,94],[140,108],[130,122],[150,110],[136,126],[196,100],[200,118],[184,126],[204,138],[232,140]]], front: "b" },
+  norte_sul: { cap: "Branco com o peito sobre o peito do azul, cabeça para o quadril; azul empurra os ombros para criar espaço.",
+    a: [[[152,132],[136,130],[156,120],[148,110],[150,122],[142,114],[86,130],[64,110],[42,138],[70,118],[46,140]],
+        [[152,132],[136,130],[158,118],[152,106],[152,120],[146,110],[86,130],[60,108],[38,138],[66,116],[42,140]]],
+    b: [[[128,112],[144,114],[134,126],[120,132],[140,128],[124,134],[200,108],[214,138],[244,140],[204,138],[236,140]],
+        [[128,116],[144,118],[134,128],[120,132],[140,130],[124,134],[198,118],[214,138],[244,140],[204,138],[236,140]]], front: "b" },
+  cem: { cap: "Branco atravessado no peito do azul, quadril baixo; azul enquadra com os antebraços.",
+    a: [BOT, ov(BOT, { 3: [116,102], 5: [120,108] })],
+    b: [[[100,110],[116,112],[100,124],[86,132],[110,126],[96,134],[152,100],[142,138],[176,140],[160,138],[190,140]],
+        [[98,112],[114,114],[100,124],[86,132],[110,126],[96,134],[154,110],[142,138],[176,140],[160,138],[190,140]]], front: "b" },
+  joelho: { cap: "Branco crava o joelho na barriga e segura gola e calça; azul empurra o joelho tentando fugir o quadril.",
+    a: [ov(BOT, { 2: [118,116], 3: [138,118], 4: [114,122], 5: [134,124] }), ov(BOT, { 2: [120,114], 3: [140,114], 4: [116,120], 5: [136,120], 6: [164,132] })],
+    b: [[[146,44],[150,58],[140,86],[130,116],[164,80],[176,120],[166,90],[144,120],[172,132],[186,108],[206,140]],
+        shift([[146,44],[150,58],[140,86],[130,116],[164,80],[176,120],[166,90],[144,120],[172,132],[186,108],[206,140]], 0, -6, [0,1,2,4,6])], front: "b" },
+  montada: { cap: "Branco sentado no tronco do azul. Ao inclinar para frente, abre espaço para a ponte (upa) do azul.",
+    a: [[[70,132],[86,130],[96,112],[112,100],[92,118],[106,108],[146,130],[170,110],[194,138],[166,116],[188,140]],
+        [[70,132],[86,130],[94,114],[106,104],[90,120],[100,112],[146,124],[170,106],[194,138],[166,112],[188,140]]],
+    b: [[[112,58],[116,72],[104,92],[94,118],[110,96],[100,124],[122,112],[100,134],[138,136],[110,138],[148,140]],
+        [[94,74],[102,84],[90,100],[82,124],[96,104],[86,128],[122,108],[100,132],[138,136],[110,136],[148,140]]], front: "b" },
+  costas: { cap: "Branco nas costas com os dois ganchos e o braço no pescoço; azul protege a gola e cai para o lado.",
+    a: [[[146,74],[150,90],[140,104],[150,92],[144,110],[156,98],[162,130],[190,110],[216,138],[184,116],[210,140]],
+        shift([[146,74],[150,90],[140,104],[150,92],[144,110],[156,98],[162,130],[190,110],[216,138],[184,116],[210,140]], -8, 4, [0,1,2,3,4,5])],
+    b: [[[132,78],[134,94],[148,96],[158,84],[146,110],[160,104],[128,132],[164,112],[182,120],[160,118],[178,128]],
+        shift([[132,78],[134,94],[148,96],[158,84],[146,110],[160,104],[128,132],[164,112],[182,120],[160,118],[178,128]], -8, 4, [0,1,2,3,4,5])],
+    front: "a", armsOver: "b" }
+};
+POS.cem.yt = "controle lateral"; POS.joelho.yt = "knee on belly";
+let animPaused = (() => { try { return matchMedia("(prefers-reduced-motion: reduce)").matches; } catch { return false; } })();
+let animK = 0;
+const lerpF = (f1, f2, k) => f1.map((p, i) => [p[0] + (f2[i][0] - p[0]) * k, p[1] + (f2[i][1] - p[1]) * k]);
+function seg(f, a, b, w, cls) { return `<line x1="${f[a][0].toFixed(1)}" y1="${f[a][1].toFixed(1)}" x2="${f[b][0].toFixed(1)}" y2="${f[b][1].toFixed(1)}" stroke-width="${w}" class="${cls}" stroke-linecap="round"/>`; }
+function figure(f, color, part = "all") {
+  const segs = { far: [[1,4,8],[4,5,7],[6,9,10],[9,10,9]], torso: [[1,6,16]], near: [[1,2,8],[2,3,7],[6,7,10],[7,8,9]] };
+  const arms = [[1,2,8],[2,3,7],[1,4,8],[4,5,7]];
+  const list = part === "arms" ? arms : [...segs.far, ...segs.torso, ...segs.near];
+  const out = color === "white";
+  let s = "";
+  list.forEach(([a, b, w], i) => {
+    const far = part !== "arms" && i < 4;
+    if (out) s += seg(f, a, b, w + 3, "fig-out");
+    s += seg(f, a, b, w, (out ? "fig-white" : "fig-blue")).replace("/>", far && !out ? ' opacity="0.7"/>' : "/>");
+  });
+  if (part !== "arms") {
+    // belt at hip
+    const [sx, sy] = f[1], [px, py] = f[6]; const bx = px + (sx - px) * 0.14, by = py + (sy - py) * 0.14;
+    s += `<circle cx="${bx.toFixed(1)}" cy="${by.toFixed(1)}" r="4.5" style="fill:var(--belt-black)"/>`;
+    s += `<circle cx="${f[0][0].toFixed(1)}" cy="${f[0][1].toFixed(1)}" r="10" style="fill:${out ? "var(--belt-white)" : "var(--belt-blue)"};stroke:${out ? "var(--muted)" : "none"};stroke-width:1.5"/>`;
+  }
+  return s;
+}
+function drawPose(k) {
+  const svg = document.getElementById("pose-svg"); if (!svg) return;
+  const P = POSES[selPos]; if (!P) return;
+  const e = (1 - Math.cos(Math.PI * k)) / 2;
+  const A = lerpF(P.a[0], P.a[1], e), B = lerpF(P.b[0], P.b[1], e);
+  const floor = `<line x1="10" y1="146" x2="290" y2="146" stroke-width="2" class="fig-out" opacity="0.5"/>`;
+  const fa = figure(A, "blue"), fb = figure(B, "white");
+  let body = P.front === "a" ? fb + fa : fa + fb;
+  if (P.armsOver === "b") body += figure(B, "white", "arms");
+  svg.innerHTML = floor + body;
+}
+function animLoop(now) {
+  if (!animPaused) { const t = (now % 3200) / 3200; animK = t < 0.5 ? t * 2 : 2 - t * 2; drawPose(animK); }
+  requestAnimationFrame(animLoop);
+}
+const YT_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="4" style="fill:currentColor"/><path d="M10 9l5 3-5 3z" style="fill:var(--surface)"/></svg>`;
+function ytLink(q, label) {
+  return `<a class="yt" href="https://www.youtube.com/results?search_query=${encodeURIComponent("jiu jitsu " + q)}" target="_blank" rel="noopener">${YT_ICON}${esc(label)}</a>`;
 }
 
 /* ---------- TECHNIQUES ---------- */
@@ -737,6 +863,7 @@ function renderTech() {
       </div>
       <ol>${t.s.map(x => `<li>${esc(x)}</li>`).join("")}</ol>
       <div class="key"><b>Detalhe-chave:</b> ${esc(t.k)}</div>
+      ${ytLink(t.n, "Assistir no YouTube")}
     </article>`).join("") : `<div class="empty panel" style="grid-column:1/-1">Nenhuma técnica com esses filtros. Tente limpar a busca ou escolher outra posição.</div>`;
 }
 
@@ -958,5 +1085,6 @@ drawMap(); selectPos(POS[selPos] ? selPos : "guarda_fechada");
 initTech(); renderTech();
 initTimer(); initLog(); initBelts();
 route();
+requestAnimationFrame(animLoop);
 })();
 </script>
