@@ -1,0 +1,962 @@
+<title>Tatame</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Barlow:wght@400;500;600&display=swap">
+<style>
+/* Layout: sticky scoreboard header with tabs; each tab is one working view (map, library, timer, log, belts). */
+:root {
+  --bg: #ECEFF3;
+  --surface: #FFFFFF;
+  --surface-2: #F5F7FA;
+  --ink: #131923;
+  --muted: #586273;
+  --line: #D2D8E1;
+  --accent: #2A49AE;
+  --accent-soft: #E2E8FA;
+  --on-accent: #FFFFFF;
+  --mat: #17735E;
+  --mat-soft: #DDF1EB;
+  --warn: #B4530B;
+  --danger: #B42318;
+  --belt-white: #F8F8F6;
+  --belt-blue: #1F4FB9;
+  --belt-purple: #6A2E9E;
+  --belt-brown: #6E3F1E;
+  --belt-black: #121212;
+  --bar-black: #121212;
+  --bar-red: #C8102E;
+  --font-display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --font-body: "Barlow", "Segoe UI", system-ui, sans-serif;
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0D121A; --surface: #151C27; --surface-2: #1A2330; --ink: #E7EBF1; --muted: #98A3B4;
+    --line: #273142; --accent: #7F9DFF; --accent-soft: #1F2A47; --on-accent: #0D121A;
+    --mat: #45B897; --mat-soft: #133229; --warn: #F0A050; --danger: #FF7A6E;
+    --belt-white: #E9E9E6; --belt-black: #050505; --bar-black: #050505;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0D121A; --surface: #151C27; --surface-2: #1A2330; --ink: #E7EBF1; --muted: #98A3B4;
+  --line: #273142; --accent: #7F9DFF; --accent-soft: #1F2A47; --on-accent: #0D121A;
+  --mat: #45B897; --mat-soft: #133229; --warn: #F0A050; --danger: #FF7A6E;
+  --belt-white: #E9E9E6; --belt-black: #050505; --bar-black: #050505;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.5; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; line-height: 1.1; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+
+/* Header */
+header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line); }
+.top-row { display: flex; align-items: center; gap: 16px; padding-block: 12px 0; flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand h1 { font-size: 28px; font-weight: 800; letter-spacing: .02em; text-transform: uppercase; }
+.brand small { color: var(--muted); font-size: 13px; }
+.belt-mark { width: 44px; height: 12px; border-radius: 2px; background: var(--belt-black); position: relative; }
+.belt-mark::after { content: ""; position: absolute; right: 6px; top: 0; bottom: 0; width: 12px; background: var(--bar-red); }
+nav.tabs { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; margin-top: 8px; }
+nav.tabs a { font-family: var(--font-display); font-weight: 600; font-size: 17px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); text-decoration: none; padding: 8px 14px 10px; border-bottom: 3px solid transparent; white-space: nowrap; }
+nav.tabs a:hover { color: var(--ink); }
+nav.tabs a[aria-current="page"] { color: var(--accent); border-bottom-color: var(--accent); }
+
+main { padding-block: 24px 64px; }
+.view-head { display: flex; justify-content: space-between; align-items: end; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
+.view-head h2 { font-size: 34px; font-weight: 700; text-transform: uppercase; }
+.view-head p { margin: 4px 0 0; color: var(--muted); max-width: 62ch; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; min-width: 0; }
+.label { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600; }
+.chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.chip.pts { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+.btn { border: 1px solid var(--line); background: var(--surface); padding: 8px 14px; border-radius: 8px; font-weight: 600; }
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.btn.go { background: var(--mat); color: #fff; border-color: var(--mat); }
+.btn.ghost { background: transparent; }
+.btn.small { padding: 4px 10px; font-size: 13px; }
+
+/* Map */
+.map-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+.map-box { padding: 8px; overflow-x: auto; }
+.map-box svg { width: 100%; min-width: 560px; height: auto; display: block; }
+.edge { fill: none; stroke: var(--line); stroke-width: 2; transition: stroke .2s, opacity .2s; }
+.edge.on { stroke: var(--accent); stroke-width: 3; }
+.edge.dim { opacity: .25; }
+.edge-label { font-size: 13px; fill: var(--accent); font-weight: 600; paint-order: stroke; stroke: var(--surface); stroke-width: 5px; }
+.node { cursor: pointer; }
+.node rect { fill: var(--surface-2); stroke: var(--line); stroke-width: 1.5; transition: fill .2s, stroke .2s; }
+.node text { font-family: var(--font-display); font-weight: 700; font-size: 18px; fill: var(--ink); text-transform: uppercase; letter-spacing: .02em; }
+.node .pts-badge { fill: var(--accent); }
+.node .pts-text { fill: var(--on-accent); font-size: 14px; }
+.node:hover rect { stroke: var(--accent); }
+.node.sel rect { fill: var(--accent); stroke: var(--accent); }
+.node.sel text.name { fill: var(--on-accent); }
+.node.sel .pts-badge { fill: var(--on-accent); }
+.node.sel .pts-text { fill: var(--accent); }
+.node.dim { opacity: .45; }
+.pos-detail h3 { font-size: 30px; text-transform: uppercase; }
+.pos-detail .alias { color: var(--muted); margin: 2px 0 12px; }
+.pos-detail p { margin: 0 0 12px; }
+.role { display: inline-block; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; padding: 3px 8px; border-radius: 4px; }
+.role.dom { background: var(--mat-soft); color: var(--mat); }
+.role.neu { background: var(--surface-2); color: var(--muted); }
+.role.inf { background: color-mix(in srgb, var(--warn) 15%, transparent); color: var(--warn); }
+.goal-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 14px 0; }
+.goal-cols ul { margin: 6px 0 0; padding-left: 18px; }
+.list-links { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.list-links button { text-align: left; border: 1px solid var(--line); background: var(--surface-2); border-radius: 8px; padding: 8px 10px; display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+.list-links button:hover { border-color: var(--accent); }
+.score-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-variant-numeric: tabular-nums; }
+.score-table td { padding: 6px 0; border-bottom: 1px solid var(--line); }
+.score-table td:last-child { text-align: right; font-family: var(--font-display); font-weight: 700; font-size: 20px; color: var(--accent); }
+.under-map { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; margin-top: 18px; }
+
+/* Library */
+.filters { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+.filters input[type="search"] { flex: 1 1 220px; min-width: 0; padding: 9px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.filters select { padding: 9px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.seg { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+.seg button { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 5px 12px; font-size: 13px; font-weight: 600; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.tech-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+.tech { display: flex; flex-direction: column; gap: 10px; }
+.tech-top { display: flex; justify-content: space-between; align-items: start; gap: 10px; }
+.tech h3 { font-size: 23px; text-transform: uppercase; }
+.tech .meta { display: flex; flex-wrap: wrap; gap: 6px; }
+.tech ol { margin: 0; padding-left: 20px; }
+.tech ol li { margin-bottom: 3px; }
+.tech .key { background: var(--surface-2); border-radius: 8px; padding: 8px 10px; font-size: 14px; }
+.tech .key b { color: var(--accent); }
+.fav { border: none; background: none; font-size: 22px; line-height: 1; color: var(--line); padding: 2px; }
+.fav[aria-pressed="true"] { color: var(--warn); }
+.mini-belt { display: inline-block; width: 26px; height: 8px; border-radius: 2px; border: 1px solid var(--line); vertical-align: middle; }
+.empty { text-align: center; color: var(--muted); padding: 40px 0; }
+
+/* Timer */
+.timer-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+.clock { text-align: center; padding: 28px 18px; border-radius: var(--r); border: 1px solid var(--line); background: var(--surface); transition: background .3s, border-color .3s; }
+.clock.work { background: var(--mat-soft); border-color: var(--mat); }
+.clock.rest { background: var(--accent-soft); border-color: var(--accent); }
+.clock.warn { border-color: var(--warn); }
+.clock .phase { font-family: var(--font-display); font-size: 22px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.clock.work .phase { color: var(--mat); }
+.clock.rest .phase { color: var(--accent); }
+.clock .digits { font-family: var(--font-display); font-weight: 800; font-size: clamp(88px, 22vw, 190px); line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.clock .round { font-size: 18px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.progress { height: 6px; background: var(--line); border-radius: 3px; margin: 18px auto 0; max-width: 520px; overflow: hidden; }
+.progress div { height: 100%; width: 0; background: var(--ink); transition: width .25s linear; }
+.controls { display: flex; justify-content: center; gap: 10px; margin-top: 22px; flex-wrap: wrap; }
+.controls .btn { padding: 12px 26px; font-size: 17px; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.field input, .field select, .field textarea { padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); width: 100%; }
+.field textarea { resize: vertical; min-height: 64px; }
+.presets { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.presets button { display: flex; justify-content: space-between; gap: 8px; text-align: left; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); }
+.presets button:hover { border-color: var(--accent); }
+.presets button span:last-child { color: var(--muted); font-variant-numeric: tabular-nums; }
+.hint { font-size: 13px; color: var(--muted); }
+
+/* Log */
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
+.stat .v { font-family: var(--font-display); font-size: 40px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.stat .v small { font-size: 18px; color: var(--muted); font-weight: 600; }
+.log-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 18px; align-items: start; }
+.bars { display: grid; grid-template-columns: repeat(8, 1fr); gap: 8px; align-items: end; height: 140px; margin-top: 10px; }
+.bars .col { display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: end; }
+.bars .bar { width: 100%; background: var(--accent); border-radius: 4px 4px 0 0; min-height: 2px; }
+.bars .bar.now { background: var(--mat); }
+.bars .n { font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.bars .wk { font-size: 11px; color: var(--muted); }
+.entries { display: flex; flex-direction: column; gap: 10px; }
+.entry { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 12px; align-items: start; padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.entry .date { font-family: var(--font-display); text-align: center; line-height: 1; }
+.entry .date b { display: block; font-size: 28px; }
+.entry .date span { font-size: 13px; text-transform: uppercase; color: var(--muted); }
+.entry .body p { margin: 4px 0 0; color: var(--muted); font-size: 14px; overflow-wrap: anywhere; }
+.entry .tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.banner { background: var(--accent-soft); color: var(--ink); border-radius: 8px; padding: 10px 12px; font-size: 14px; margin-bottom: 12px; }
+.confirm-row { display: flex; gap: 6px; align-items: center; font-size: 13px; }
+
+/* Belts */
+.belt { height: 30px; border-radius: 4px; position: relative; border: 1px solid var(--line); overflow: hidden; }
+.belt .bar { position: absolute; right: 14%; top: 0; bottom: 0; width: 22%; display: flex; gap: 5px; justify-content: center; align-items: stretch; padding: 0 6px; }
+.belt .bar i { width: 5px; background: #fff; }
+.belt-row { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 16px; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.belt-row:last-child { border-bottom: none; }
+.belt-row h3 { font-size: 22px; text-transform: uppercase; }
+.belt-row p { margin: 2px 0 0; color: var(--muted); font-size: 14px; }
+.belt-facts { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.belt-grid { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+.result { margin-top: 16px; padding: 14px; border-radius: 8px; background: var(--surface-2); }
+.result .big { font-family: var(--font-display); font-size: 30px; font-weight: 800; line-height: 1.1; }
+.result ul { margin: 8px 0 0; padding-left: 18px; }
+.degrees { display: flex; gap: 6px; }
+.degrees button { width: 34px; height: 34px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); font-weight: 700; }
+.degrees button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+.toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 8px; font-weight: 600; z-index: 20; }
+
+@media (max-width: 860px) {
+  .map-grid, .timer-grid, .log-grid, .belt-grid { grid-template-columns: minmax(0, 1fr); }
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 520px) {
+  .goal-cols, .form-grid { grid-template-columns: 1fr; }
+  .belt-row { grid-template-columns: 1fr; gap: 8px; }
+  .view-head h2 { font-size: 28px; }
+  .brand small { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <div class="top-row">
+      <div class="brand"><span class="belt-mark" aria-hidden="true"></span><h1>Tatame</h1><small>caderno de treino de jiu-jitsu</small></div>
+    </div>
+    <nav class="tabs" aria-label="Seções">
+      <a href="#mapa">Mapa</a>
+      <a href="#tecnicas">Técnicas</a>
+      <a href="#cronometro">Cronômetro</a>
+      <a href="#treinos">Treinos</a>
+      <a href="#faixas">Faixas</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+<!-- MAPA -->
+<section id="v-mapa" data-view="mapa">
+  <div class="view-head">
+    <div>
+      <h2>Mapa de posições</h2>
+      <p>Toque numa posição para ver o que fazer por cima e por baixo, para onde ela leva e quantos pontos vale chegar lá numa luta pelas regras IBJJF.</p>
+    </div>
+  </div>
+  <div class="map-grid">
+    <div class="panel map-box"><svg id="map" viewBox="0 0 960 600" role="img" aria-label="Mapa de transições entre posições do jiu-jitsu"></svg></div>
+    <div class="panel pos-detail" id="pos-detail" aria-live="polite"></div>
+  </div>
+  <div class="under-map">
+    <div class="panel">
+      <div class="label">Pontuação IBJJF</div>
+      <table class="score-table">
+        <tr><td>Montada</td><td>4</td></tr>
+        <tr><td>Pegada de costas (com ganchos)</td><td>4</td></tr>
+        <tr><td>Passagem de guarda</td><td>3</td></tr>
+        <tr><td>Queda</td><td>2</td></tr>
+        <tr><td>Raspagem</td><td>2</td></tr>
+        <tr><td>Joelho na barriga</td><td>2</td></tr>
+      </table>
+      <p class="hint">A posição precisa ser estabilizada por 3 segundos para pontuar.</p>
+    </div>
+    <div class="panel">
+      <div class="label">Hierarquia de posições</div>
+      <p style="margin:8px 0 0">Do mais seguro ao mais perigoso para quem está por baixo:</p>
+      <ol style="margin:8px 0 0;padding-left:20px">
+        <li>Guarda (fechada, aberta, meia)</li>
+        <li>Tartaruga</li>
+        <li>100 kg e norte-sul</li>
+        <li>Joelho na barriga</li>
+        <li>Montada</li>
+        <li>Costas</li>
+      </ol>
+      <p class="hint">Posição antes de finalização. Primeiro chegue e estabilize, depois ataque.</p>
+    </div>
+  </div>
+</section>
+
+<!-- TÉCNICAS -->
+<section id="v-tecnicas" data-view="tecnicas" hidden>
+  <div class="view-head">
+    <div>
+      <h2>Técnicas</h2>
+      <p>Passo a passo resumido e o detalhe que faz a técnica funcionar. Marque com estrela as que você está estudando.</p>
+    </div>
+    <span class="chip" id="tech-count"></span>
+  </div>
+  <div class="filters">
+    <input type="search" id="q" placeholder="Buscar: triângulo, raspagem, costas…" aria-label="Buscar técnica">
+    <select id="f-pos" aria-label="Posição"><option value="">Todas as posições</option></select>
+    <select id="f-belt" aria-label="Faixa">
+      <option value="">Todas as faixas</option>
+      <option value="branca">Faixa branca</option>
+      <option value="azul">Faixa azul</option>
+      <option value="roxa">Faixa roxa</option>
+    </select>
+  </div>
+  <div class="seg" id="f-type" role="group" aria-label="Tipo de técnica"></div>
+  <div class="tech-grid" id="tech-grid"></div>
+</section>
+
+<!-- CRONÔMETRO -->
+<section id="v-cronometro" data-view="cronometro" hidden>
+  <div class="view-head">
+    <div>
+      <h2>Cronômetro de rounds</h2>
+      <p>Rounds com descanso, aviso sonoro nos últimos 10 segundos e no fim de cada round. O som começa depois que você aperta Iniciar.</p>
+    </div>
+  </div>
+  <div class="timer-grid">
+    <div>
+      <div class="clock" id="clock">
+        <div class="phase" id="t-phase">Pronto</div>
+        <div class="digits" id="t-digits">05:00</div>
+        <div class="round" id="t-round">Round 1 de 6</div>
+        <div class="progress"><div id="t-bar"></div></div>
+      </div>
+      <div class="controls">
+        <button class="btn go" id="t-start">Iniciar</button>
+        <button class="btn" id="t-skip">Pular fase</button>
+        <button class="btn ghost" id="t-reset">Zerar</button>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="label">Configuração</div>
+      <div class="form-grid" style="margin-top:10px">
+        <label class="field"><span class="hint">Rounds</span><input type="number" id="c-rounds" min="1" max="30" value="6"></label>
+        <label class="field"><span class="hint">Round (min)</span><input type="number" id="c-work" min="0.5" max="20" step="0.5" value="5"></label>
+        <label class="field"><span class="hint">Descanso (s)</span><input type="number" id="c-rest" min="0" max="300" step="5" value="60"></label>
+        <label class="field"><span class="hint">Preparação (s)</span><input type="number" id="c-prep" min="0" max="60" step="5" value="10"></label>
+      </div>
+      <div class="label" style="margin-top:18px">Tempo de luta IBJJF (adulto)</div>
+      <div class="presets" id="presets"></div>
+    </div>
+  </div>
+</section>
+
+<!-- TREINOS -->
+<section id="v-treinos" data-view="treinos" hidden>
+  <div class="view-head">
+    <div>
+      <h2>Diário de treinos</h2>
+      <p>Registre cada treino e acompanhe a frequência. Os dados ficam salvos só neste navegador.</p>
+    </div>
+  </div>
+  <div class="stats">
+    <div class="panel stat"><div class="label">Treinos</div><div class="v" id="s-count">0</div></div>
+    <div class="panel stat"><div class="label">Horas no tatame</div><div class="v" id="s-hours">0</div></div>
+    <div class="panel stat"><div class="label">Rounds</div><div class="v" id="s-rounds">0</div></div>
+    <div class="panel stat"><div class="label">Este mês</div><div class="v" id="s-month">0</div></div>
+  </div>
+  <div class="log-grid">
+    <div style="display:flex;flex-direction:column;gap:18px">
+      <form class="panel" id="log-form">
+        <div class="label">Novo treino</div>
+        <div class="form-grid" style="margin-top:10px">
+          <label class="field"><span class="hint">Data</span><input type="date" id="l-date" required></label>
+          <label class="field"><span class="hint">Duração (min)</span><input type="number" id="l-dur" min="10" max="300" step="5" value="90" required></label>
+          <label class="field"><span class="hint">Modalidade</span><select id="l-kind"><option>Kimono</option><option>Sem kimono</option><option>Open mat</option><option>Competição</option></select></label>
+          <label class="field"><span class="hint">Rounds de rola</span><input type="number" id="l-rounds" min="0" max="30" value="5"></label>
+        </div>
+        <label class="field" style="margin-top:12px"><span class="hint">Técnicas treinadas</span><input type="text" id="l-tech" placeholder="Ex.: raspagem de gancho, toreando"></label>
+        <label class="field" style="margin-top:12px"><span class="hint">Anotações</span><textarea id="l-notes" placeholder="O que funcionou, onde travou, o que revisar"></textarea></label>
+        <div style="margin-top:14px"><button class="btn primary" type="submit">Salvar treino</button></div>
+      </form>
+      <div class="panel">
+        <div class="label">Treinos por semana (últimas 8)</div>
+        <div class="bars" id="bars"></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="label" style="margin-bottom:10px">Histórico</div>
+      <div id="sample-banner" class="banner" hidden>Estes são treinos de exemplo para mostrar como o diário funciona. Eles somem quando você salvar o primeiro treino.</div>
+      <div class="entries" id="entries"></div>
+    </div>
+  </div>
+</section>
+
+<!-- FAIXAS -->
+<section id="v-faixas" data-view="faixas" hidden>
+  <div class="view-head">
+    <div>
+      <h2>Faixas e graduação</h2>
+      <p>Tempos mínimos e idades do sistema de graduação adulto da IBJJF. A decisão de graduar é sempre do seu professor; confira o regulamento vigente da federação.</p>
+    </div>
+  </div>
+  <div class="belt-grid">
+    <div class="panel" id="belt-list"></div>
+    <div class="panel">
+      <div class="label">Quando posso trocar de faixa?</div>
+      <div class="form-grid" style="margin-top:10px">
+        <label class="field"><span class="hint">Faixa atual</span><select id="b-cur"><option value="0">Branca</option><option value="1" selected>Azul</option><option value="2">Roxa</option><option value="3">Marrom</option></select></label>
+        <label class="field"><span class="hint">Recebi em</span><input type="date" id="b-since"></label>
+        <label class="field"><span class="hint">Data de nascimento</span><input type="date" id="b-birth"></label>
+        <div class="field"><span class="hint">Graus</span><div class="degrees" id="b-deg"></div></div>
+      </div>
+      <div style="margin-top:14px"><div class="belt" id="b-preview"></div></div>
+      <div class="result" id="b-result"></div>
+    </div>
+  </div>
+</section>
+
+</main>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(() => {
+"use strict";
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("tatame:" + k); return v ? JSON.parse(v) : d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem("tatame:" + k, JSON.stringify(v)); } catch {} }
+};
+let toastTimer;
+function toast(msg) { const t = $("#toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => t.hidden = true, 2200); }
+
+/* ---------- DATA ---------- */
+const POS = {
+  pe:            { n: "Em pé", alias: "Luta em pé, quedas", x: 480, y: 60, role: "neu", pts: null,
+    d: "Toda luta começa aqui. Quem domina a pegada controla o ritmo: ou leva para o chão com uma queda, ou puxa para a guarda.",
+    top: ["Ganhar a pegada na gola e na manga", "Entrar na queda e cair por cima", "Defender a queda com sprawl"],
+    bot: ["Puxar guarda com pegada firme", "Não ficar com a postura quebrada", "Evitar ficar parado de pernas retas"] },
+  guarda_fechada:{ n: "Guarda fechada", alias: "Pernas trancadas na cintura", x: 260, y: 180, role: "neu", pts: null,
+    d: "A posição clássica do jiu-jitsu. Quem está por baixo tem ataques de finalização e raspagem; quem está por cima precisa de postura antes de tentar abrir.",
+    top: ["Postura reta, mãos no quadril ou na gola", "Cotovelos colados, nada de mão no chão", "Abrir a guarda em pé ou ajoelhado"],
+    bot: ["Quebrar a postura puxando com pernas e braços", "Ângulo de quadril para atacar", "Combinar ataque e raspagem"] },
+  guarda_aberta: { n: "Guarda aberta", alias: "De La Riva, aranha, borboleta", x: 700, y: 180, role: "neu", pts: null,
+    d: "Os pés trabalham no quadril, nos bíceps ou nas pernas do oponente para controlar distância. É a família de guardas com mais variações.",
+    top: ["Controlar as pernas antes do tronco", "Tirar os ganchos e quebrar pegadas", "Passar com pressão ou velocidade"],
+    bot: ["Manter pelo menos dois pontos de contato", "Mover o quadril, nunca deitar parado", "Desequilibrar para raspar"] },
+  meia:          { n: "Meia-guarda", alias: "Uma perna presa", x: 480, y: 290, role: "neu", pts: null,
+    d: "Uma perna do oponente presa entre as suas. Por baixo, o segredo é ficar de lado com o braço por dentro; por cima, achatar e cruzar a cabeça.",
+    top: ["Esmagar com o peito e controlar a cabeça", "Ganhar o underhook", "Soltar o joelho e passar"],
+    bot: ["Ficar de lado, nunca de costas no chão", "Ganhar o underhook (braço por baixo)", "Raspar ou buscar as costas"] },
+  tartaruga:     { n: "Tartaruga", alias: "Quatro apoios", x: 820, y: 330, role: "inf", pts: null,
+    d: "De quatro, protegendo pescoço e costas. É uma posição de transição: ou você volta para a guarda, ou cede as costas.",
+    top: ["Pegada de cinto de segurança", "Entrar o primeiro gancho", "Ataque ao pescoço (clock choke)"],
+    bot: ["Proteger o pescoço com as mãos", "Cotovelos colados nos joelhos", "Rolar ou sentar para repor a guarda"] },
+  norte_sul:     { n: "Norte-sul", alias: "Cabeça com quadril", x: 110, y: 300, role: "dom", pts: null,
+    d: "Por cima, peito sobre o peito do oponente e cabeça virada para as pernas dele. Muito controle e um estrangulamento perigoso.",
+    top: ["Peso no peito, quadril baixo", "Isolar um braço", "Estrangular com o braço sob o pescoço"],
+    bot: ["Criar espaço com os antebraços", "Virar de lado e puxar o joelho para dentro", "Repor a guarda"] },
+  cem:           { n: "100 kg", alias: "Cem quilos, controle lateral", x: 340, y: 420, role: "dom", pts: 3,
+    d: "Por cima, peito com peito de lado. É onde você chega depois de passar a guarda. Pressão e paciência antes de avançar.",
+    top: ["Controlar quadril e cabeça", "Peso no peito, joelhos colados", "Avançar para montada ou joelho na barriga"],
+    bot: ["Enquadrar com antebraços no pescoço e quadril", "Fuga de quadril para pôr o joelho dentro", "Não empurrar com braços esticados"] },
+  joelho:        { n: "Joelho na barriga", alias: "Knee on belly", x: 600, y: 420, role: "dom", pts: 2,
+    d: "Joelho cravado na barriga ou no peito, outra perna aberta para base. Muita pressão e mobilidade para atacar dos dois lados.",
+    top: ["Pegada na gola e na calça", "Peso no joelho, base larga", "Atacar o braço que empurra"],
+    bot: ["Empurrar o joelho e fugir o quadril", "Virar para o lado do joelho", "Nunca dar o braço esticado"] },
+  montada:       { n: "Montada", alias: "Sentado no tronco", x: 180, y: 540, role: "dom", pts: 4,
+    d: "Sentado sobre o tronco do oponente, joelhos no chão. Vale 4 pontos e abre armlocks, estrangulamentos e a pegada de costas.",
+    top: ["Montada baixa com pés travados", "Subir para montada alta com cotovelos expostos", "Estrangular ou armlock quando ele empurrar"],
+    bot: ["Cotovelos colados, mãos protegendo o pescoço", "Upa: ponte e rolamento", "Fuga cotovelo-joelho"] },
+  costas:        { n: "Costas", alias: "Pegada de costas", x: 720, y: 540, role: "dom", pts: 4,
+    d: "Peito colado nas costas, dois ganchos nas coxas e cinto de segurança no tronco. A posição mais dominante do jiu-jitsu.",
+    top: ["Cinto de segurança com a cabeça colada", "Ganchos firmes ou triângulo de pernas", "Atacar o pescoço com paciência"],
+    bot: ["Proteger o pescoço primeiro", "Cair para o lado do braço de baixo", "Tirar os ganchos e virar de frente"] }
+};
+const EDGES = [
+  ["pe", "guarda_fechada", "puxar guarda", 0, -30],
+  ["pe", "guarda_aberta", "puxar guarda", 0, 30],
+  ["pe", "cem", "queda", 2, 0],
+  ["pe", "tartaruga", "sprawl", 0, 30],
+  ["guarda_fechada", "guarda_aberta", "abrir a guarda", 0, -30],
+  ["guarda_fechada", "montada", "raspagem", 2, -40],
+  ["guarda_fechada", "costas", "arm drag", 0, 50],
+  ["guarda_aberta", "meia", "meia passagem", 0, 0],
+  ["guarda_aberta", "cem", "passagem", 3, -40],
+  ["meia", "cem", "passagem", 3, 0],
+  ["meia", "costas", "pegada de costas", 4, 0],
+  ["cem", "joelho", "joelho na barriga", 2, -20],
+  ["cem", "montada", "montar", 4, 0],
+  ["cem", "norte_sul", "transição", 0, 0],
+  ["joelho", "montada", "montar", 4, 30],
+  ["montada", "costas", "pegada de costas", 4, 40],
+  ["tartaruga", "costas", "ganchos", 4, 0]
+];
+const TYPES = ["finalização", "raspagem", "passagem", "fuga", "queda", "transição"];
+const T = [
+  { n: "Armlock da guarda", pos: "guarda_fechada", t: "finalização", b: "branca",
+    s: ["Controle a manga do braço que vai atacar", "Pé no quadril do oponente e gire o corpo em ângulo", "Passe a perna por cima da cabeça", "Feche os joelhos e eleve o quadril com o polegar dele para cima"],
+    k: "O ângulo vem do quadril. Sem girar 90°, o braço escapa." },
+  { n: "Triângulo", pos: "guarda_fechada", t: "finalização", b: "branca",
+    s: ["Empurre um braço para dentro e mantenha o outro para fora", "Suba a perna por cima do ombro e do pescoço", "Trave a dobra do joelho no tornozelo", "Puxe a cabeça para baixo e aperte os joelhos"],
+    k: "Corte o ângulo ficando de lado em relação a ele. De frente, o golpe não aperta." },
+  { n: "Kimura da guarda", pos: "guarda_fechada", t: "finalização", b: "branca",
+    s: ["Espere ele apoiar a mão no tatame", "Sente e segure o punho com a mão do mesmo lado", "Passe o outro braço por cima do ombro e segure seu próprio punho", "Deite, trave as pernas e gire o braço para trás"],
+    k: "Mantenha o cotovelo dele colado no seu peito para tirar o espaço." },
+  { n: "Omoplata", pos: "guarda_fechada", t: "finalização", b: "azul",
+    s: ["Controle a manga e coloque o pé no quadril", "Gire o quadril e passe a perna por cima do ombro", "Vire de barriga para baixo e segure a faixa dele", "Sente, ande com os pés para frente e incline o tronco"],
+    k: "Segure a cintura antes de sentar. Sem isso ele rola e escapa." },
+  { n: "Raspagem de quadril", pos: "guarda_fechada", t: "raspagem", b: "branca",
+    s: ["Ele faz postura e você sobe sentado apoiado na mão", "Passe o braço por cima do ombro dele", "Empurre com o quadril para o lado da mão apoiada", "Termine montado"],
+    k: "Funciona melhor quando ele tenta ficar reto. Combine com a kimura." },
+  { n: "Raspagem tesoura", pos: "guarda_fechada", t: "raspagem", b: "branca",
+    s: ["Pegada cruzada na gola e na manga", "Fuja o quadril e coloque a canela na barriga dele", "Puxe para cima de você enquanto a perna de baixo corta o joelho", "Role junto e termine na montada"],
+    k: "Puxe primeiro para tirar o peso dele das pernas. Depois corte." },
+  { n: "Arm drag para as costas", pos: "guarda_fechada", t: "transição", b: "azul",
+    s: ["Abra a guarda e segure o punho dele", "Com a outra mão, puxe o tríceps cruzando o braço", "Sente para o lado do braço puxado", "Abrace as costas e entre os ganchos"],
+    k: "Você vai para as costas dele, não o contrário. Mova o quadril." },
+  { n: "Estrangulamento cruzado", pos: "guarda_fechada", t: "finalização", b: "branca",
+    s: ["Mão bem funda na gola, quatro dedos dentro", "Segunda mão na outra gola, polegar dentro", "Puxe-o para baixo com as pernas", "Abra os cotovelos como quem rema"],
+    k: "Quanto mais funda a primeira pegada, menos força você precisa." },
+  { n: "Raspagem de gancho", pos: "guarda_aberta", t: "raspagem", b: "azul",
+    s: ["Sentado, ganchos dos pés na parte interna das coxas", "Underhook de um lado e controle do braço do outro", "Caia para o lado do braço controlado", "Levante com o gancho e role por cima"],
+    k: "Traga o peso dele para cima de você antes de levantar o gancho." },
+  { n: "Raspagem de tornozelo", pos: "guarda_aberta", t: "raspagem", b: "branca",
+    s: ["Ele em pé na sua guarda aberta", "Segure os dois calcanhares", "Empurre os quadris com os pés", "Quando cair, levante e termine por cima"],
+    k: "Empurre o quadril para trás, não para cima. Ele cai sentado." },
+  { n: "Berimbolo", pos: "guarda_aberta", t: "transição", b: "roxa",
+    s: ["Gancho De La Riva e pegada na faixa", "Desequilibre-o para trás", "Role por baixo invertendo o corpo", "Siga o quadril dele até as costas"],
+    k: "A cabeça e o ombro rolam, não o pescoço. Treine a inversão sozinho antes." },
+  { n: "Passagem toreando", pos: "guarda_aberta", t: "passagem", b: "branca",
+    s: ["Em pé, segure a calça na altura dos joelhos", "Empurre as pernas para um lado e para baixo", "Dê a volta pelo outro lado", "Estabilize no 100 kg ou no joelho na barriga"],
+    k: "Velocidade e quadril dele colado no chão. Se ele virar, perde a passagem." },
+  { n: "Passagem por baixo", pos: "guarda_aberta", t: "passagem", b: "azul",
+    s: ["Um braço por baixo da perna, outro por cima", "Encaixe o ombro e empilhe o quadril dele", "Ande para o lado da perna de cima", "Desça no 100 kg mantendo a pressão"],
+    k: "Peso no ombro, cabeça colada no quadril dele. Sem espaço para repor." },
+  { n: "Passagem de joelho", pos: "meia", t: "passagem", b: "branca",
+    s: ["Controle o underhook e a cabeça", "Coloque o joelho cortando a coxa dele", "Deslize o joelho até o chão do outro lado", "Libere a perna e estabilize no 100 kg"],
+    k: "O underhook é o que trava a fuga dele. Sem ele, ele volta para a meia." },
+  { n: "Raspagem velha", pos: "meia", t: "raspagem", b: "branca",
+    s: ["De lado, underhook firme", "Segure o tornozelo da perna livre", "Empurre com a cabeça e o ombro", "Role por cima mantendo o tornozelo preso"],
+    k: "Abrace o tornozelo antes de empurrar. Sem ele, ele faz base." },
+  { n: "Costas pela meia-guarda", pos: "meia", t: "transição", b: "azul",
+    s: ["Underhook e cabeça colada no peito dele", "Saia de baixo pelo lado do underhook", "Gire em direção às costas", "Entre o cinto de segurança e os ganchos"],
+    k: "Saia para trás dele, não para frente." },
+  { n: "Americana", pos: "cem", t: "finalização", b: "branca",
+    s: ["Imobilize o punho no tatame com o braço em L", "Passe a outra mão por baixo do braço e segure seu punho", "Arraste o cotovelo dele em direção ao quadril", "Levante o cotovelo devagar"],
+    k: "Pulso dele colado no chão o tempo todo, como se pintasse o tatame." },
+  { n: "Kimura do 100 kg", pos: "cem", t: "finalização", b: "branca",
+    s: ["Isole o braço de longe", "Segure o punho e trave a figura quatro", "Passe a perna por cima da cabeça para travar", "Gire o braço para trás das costas"],
+    k: "Fique de joelhos para ter mais alavanca." },
+  { n: "Fuga do 100 kg", pos: "cem", t: "fuga", b: "branca",
+    s: ["Enquadre com antebraço no pescoço e no quadril dele", "Ponte curta para criar espaço", "Fuja o quadril para longe", "Coloque o joelho no espaço e reponha a guarda"],
+    k: "Os braços só seguram a distância. Quem cria o espaço é o quadril." },
+  { n: "Armlock da montada", pos: "montada", t: "finalização", b: "branca",
+    s: ["Suba para a montada alta", "Prenda um braço no seu peito", "Gire, passe a perna pela cabeça e sente perto do ombro", "Caia para trás, joelhos juntos, e eleve o quadril"],
+    k: "Sente colado no ombro dele. Espaço entre vocês é por onde o braço sai." },
+  { n: "Ezequiel", pos: "montada", t: "finalização", b: "branca",
+    s: ["Passe um braço por trás da cabeça dele", "Segure a manga do próprio braço por dentro", "Coloque a outra mão na frente do pescoço", "Feche fazendo uma tesoura com os antebraços"],
+    k: "Funciona até sem gola. Cabeça baixa protege você do contra-ataque." },
+  { n: "Fuga da montada: upa", pos: "montada", t: "fuga", b: "branca",
+    s: ["Prenda um braço dele e o pé do mesmo lado", "Faça ponte alta em diagonal, por cima do ombro", "Role para o lado preso", "Termine dentro da guarda dele"],
+    k: "Ele precisa estar sem base daquele lado. Prenda braço e perna juntos." },
+  { n: "Fuga da montada: cotovelo-joelho", pos: "montada", t: "fuga", b: "branca",
+    s: ["Ponte curta para desequilibrar", "Vire de lado e fuja o quadril", "Puxe o joelho por dentro, usando o cotovelo de guia", "Faça o mesmo do outro lado e feche a guarda"],
+    k: "Cotovelo e joelho se encontram. Nada de empurrar o peito dele." },
+  { n: "Mata-leão", pos: "costas", t: "finalização", b: "branca",
+    s: ["Cinto de segurança com a cabeça colada", "Braço de cima passa por baixo do queixo", "Segure seu bíceps e coloque a outra mão atrás da cabeça", "Encolha os ombros e aperte"],
+    k: "Dobra do cotovelo no centro do pescoço. Não aperte com o antebraço no queixo." },
+  { n: "Arco e flecha", pos: "costas", t: "finalização", b: "azul",
+    s: ["Mão funda na gola por cima do ombro", "Outra mão segura a calça no joelho", "Saia para o lado da gola e passe a perna pelo ombro", "Puxe a gola e estique a perna como um arco"],
+    k: "Perpendicular a ele. Quanto mais 90°, mais forte." },
+  { n: "Fuga das costas", pos: "costas", t: "fuga", b: "branca",
+    s: ["Proteja o pescoço com as duas mãos", "Escorregue até apoiar os ombros no tatame", "Caia para o lado do braço de baixo", "Tire o gancho de cima e vire de frente"],
+    k: "Ombros no chão primeiro. Assim ele perde o controle do tronco." },
+  { n: "Baiana", pos: "pe", t: "queda", b: "branca",
+    s: ["Abaixe o nível dobrando os joelhos", "Passe o pé entre as pernas dele", "Abrace atrás das duas coxas, cabeça colada", "Empurre na diagonal e caia por cima"],
+    k: "Mude o nível antes de entrar. Entrar curvado é dar o pescoço para a guilhotina." },
+  { n: "O-soto-gari", pos: "pe", t: "queda", b: "branca",
+    s: ["Pegada na gola e na manga", "Puxe o peso dele para o calcanhar de trás", "Passe sua perna atrás da dele", "Varra a perna enquanto empurra o tronco"],
+    k: "Desequilíbrio primeiro. Sem o peso dele naquela perna, não varre." },
+  { n: "Puxada de guarda", pos: "pe", t: "transição", b: "branca",
+    s: ["Ganhe pegada na gola e na manga", "Pé no quadril ou no bíceps", "Sente perto dele, não longe", "Feche a guarda ou estabeleça a guarda aberta"],
+    k: "Puxar sem pegada é cair de costas e entregar a passagem." },
+  { n: "Armlock do joelho na barriga", pos: "joelho", t: "finalização", b: "azul",
+    s: ["Pressione o joelho até ele empurrar", "Segure o braço que empurrou", "Passe a perna por cima da cabeça", "Sente e finalize o armlock"],
+    k: "O empurrão dele é o convite. Pressão gera reação." },
+  { n: "Estrangulamento norte-sul", pos: "norte_sul", t: "finalização", b: "roxa",
+    s: ["Passe o braço por baixo do pescoço dele", "Encaixe o ombro dele com a axila", "Segure o próprio punho", "Abaixe o quadril e afunde o bíceps"],
+    k: "A pressão vem do quadril baixo, não do braço." },
+  { n: "Clock choke", pos: "tartaruga", t: "finalização", b: "azul",
+    s: ["De lado, mão funda na gola do lado oposto", "Prenda o braço dele com seu outro braço", "Estique as pernas e apoie o peso nas costas dele", "Ande em volta como um ponteiro de relógio"],
+    k: "O peso no ombro dele impede que ele role." },
+  { n: "Cinto de segurança na tartaruga", pos: "tartaruga", t: "transição", b: "branca",
+    s: ["Um braço por cima do ombro, outro por baixo da axila", "Mãos juntas no peito dele", "Peito colado nas costas", "Entre o primeiro gancho do lado do braço de baixo"],
+    k: "Prenda o tronco antes dos ganchos. Gancho sem controle é escorregão." }
+];
+const BELTS = [
+  { n: "Branca", c: "var(--belt-white)", bar: "var(--bar-black)", min: "Sem tempo mínimo", age: "Qualquer idade", d: "Base: posições, fugas e sobrevivência." },
+  { n: "Azul", c: "var(--belt-blue)", bar: "var(--bar-black)", min: "2 anos na faixa", age: "Idade mínima 16", d: "Repertório amplo e guarda funcional." },
+  { n: "Roxa", c: "var(--belt-purple)", bar: "var(--bar-black)", min: "1 ano e meio na faixa", age: "Idade mínima 16", d: "Estilo próprio e conexão entre técnicas." },
+  { n: "Marrom", c: "var(--belt-brown)", bar: "var(--bar-black)", min: "1 ano na faixa", age: "Idade mínima 18", d: "Refinamento e ensino." },
+  { n: "Preta", c: "var(--belt-black)", bar: "var(--bar-red)", min: "3 anos por grau (1º a 3º), 5 anos (4º a 6º)", age: "Idade mínima 19", d: "Depois do 6º grau: coral (7º e 8º) e vermelha (9º e 10º)." }
+];
+const MIN_YEARS = [0, 2, 1.5, 1]; // time in current belt before next
+const MIN_AGE_NEXT = [16, 16, 18, 19];
+const FIGHT = [["Branca", 5], ["Azul", 6], ["Roxa", 7], ["Marrom", 8], ["Preta", 10]];
+const BELT_KEY = { branca: 0, azul: 1, roxa: 2 };
+
+function beltHTML(i, deg = 0, cls = "belt") {
+  const b = BELTS[i];
+  const stripes = Array.from({ length: deg }, () => "<i></i>").join("");
+  return `<div class="${cls}" style="background:${b.c}" role="img" aria-label="Faixa ${b.n}${deg ? `, ${deg} grau${deg > 1 ? "s" : ""}` : ""}"><div class="bar" style="background:${b.bar}">${stripes}</div></div>`;
+}
+
+/* ---------- ROUTER ---------- */
+const VIEWS = ["mapa", "tecnicas", "cronometro", "treinos", "faixas"];
+function route() {
+  const h = location.hash.slice(1);
+  const v = VIEWS.includes(h) ? h : "mapa";
+  $$("[data-view]").forEach(s => s.hidden = s.dataset.view !== v);
+  $$("nav.tabs a").forEach(a => { if (a.getAttribute("href") === "#" + v) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
+}
+window.addEventListener("hashchange", () => { route(); window.scrollTo(0, 0); });
+
+/* ---------- MAP ---------- */
+const NS = "http://www.w3.org/2000/svg";
+let selPos = store.get("pos", "guarda_fechada");
+function edgePath(a, b, bend) {
+  const A = POS[a], B = POS[b];
+  const mx = (A.x + B.x) / 2, my = (A.y + B.y) / 2;
+  const dx = B.x - A.x, dy = B.y - A.y, len = Math.hypot(dx, dy) || 1;
+  const cx = mx + (-dy / len) * bend, cy = my + (dx / len) * bend;
+  // trim to box edges (approx) so arrow lands outside node
+  const trim = (px, py, qx, qy) => {
+    const hw = 76, hh = 26; const vx = qx - px, vy = qy - py;
+    const t = Math.min(hw / Math.abs(vx || 1e-6), hh / Math.abs(vy || 1e-6), 1);
+    return [px + vx * t, py + vy * t];
+  };
+  const [sx, sy] = trim(A.x, A.y, cx, cy);
+  const [ex, ey] = trim(B.x, B.y, cx, cy);
+  return { d: `M${sx},${sy} Q${cx},${cy} ${ex},${ey}`, lx: (sx + 2 * cx + ex) / 4, ly: (sy + 2 * cy + ey) / 4 };
+}
+function drawMap() {
+  const svg = $("#map");
+  svg.innerHTML = `<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--line)"/></marker><marker id="arr-on" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--accent)"/></marker></defs>`;
+  const gE = document.createElementNS(NS, "g"), gL = document.createElementNS(NS, "g"), gN = document.createElementNS(NS, "g");
+  EDGES.forEach(([a, b, lab, pts, bend], i) => {
+    const p = edgePath(a, b, bend);
+    const path = document.createElementNS(NS, "path");
+    path.setAttribute("d", p.d); path.setAttribute("class", "edge"); path.dataset.a = a; path.dataset.b = b; path.dataset.i = i;
+    gE.appendChild(path);
+    const t = document.createElementNS(NS, "text");
+    t.setAttribute("x", p.lx); t.setAttribute("y", p.ly + 4); t.setAttribute("text-anchor", "middle");
+    t.setAttribute("class", "edge-label"); t.dataset.i = i; t.textContent = lab + (pts ? ` +${pts}` : "");
+    t.style.display = "none";
+    gL.appendChild(t);
+  });
+  Object.entries(POS).forEach(([id, p]) => {
+    const g = document.createElementNS(NS, "g");
+    g.setAttribute("class", "node"); g.setAttribute("tabindex", "0"); g.setAttribute("role", "button");
+    g.setAttribute("aria-label", p.n); g.dataset.id = id;
+    g.innerHTML = `<rect x="${p.x - 74}" y="${p.y - 24}" width="148" height="48" rx="8"/>
+      <text class="name" x="${p.x}" y="${p.y + 6}" text-anchor="middle">${esc(p.n)}</text>
+      ${p.pts ? `<circle class="pts-badge" cx="${p.x + 72}" cy="${p.y - 22}" r="13"/><text class="pts-text" x="${p.x + 72}" y="${p.y - 17}" text-anchor="middle">${p.pts}</text>` : ""}`;
+    g.addEventListener("click", () => selectPos(id));
+    g.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); selectPos(id); } });
+    gN.appendChild(g);
+  });
+  svg.append(gE, gL, gN);
+}
+function selectPos(id) {
+  selPos = id; store.set("pos", id);
+  const related = new Set([id]);
+  $$("#map .edge").forEach(e => {
+    const on = e.dataset.a === id || e.dataset.b === id;
+    e.classList.toggle("on", on); e.classList.toggle("dim", !on);
+    e.setAttribute("marker-end", on ? "url(#arr-on)" : "url(#arr)");
+    $(`#map .edge-label[data-i="${e.dataset.i}"]`).style.display = on ? "" : "none";
+    if (on) { related.add(e.dataset.a); related.add(e.dataset.b); }
+  });
+  $$("#map .node").forEach(n => { n.classList.toggle("sel", n.dataset.id === id); n.classList.toggle("dim", !related.has(n.dataset.id)); });
+  renderPosDetail(id);
+}
+function renderPosDetail(id) {
+  const p = POS[id];
+  const roleTxt = { dom: "Dominante", neu: "Neutra", inf: "Defensiva" }[p.role];
+  const out = EDGES.filter(e => e[0] === id), inn = EDGES.filter(e => e[1] === id);
+  const techs = T.filter(t => t.pos === id);
+  const linkBtn = (tid, txt, chip) => `<button data-go="${tid}"><span>${esc(txt)}</span>${chip ? `<span class="chip pts">${chip}</span>` : ""}</button>`;
+  $("#pos-detail").innerHTML = `
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="role ${p.role}">${roleTxt}</span>${p.pts ? `<span class="chip pts">${p.pts} pontos ao chegar</span>` : ""}</div>
+    <h3 style="margin-top:8px">${esc(p.n)}</h3>
+    <div class="alias">${esc(p.alias)}</div>
+    <p>${esc(p.d)}</p>
+    <div class="goal-cols">
+      <div><div class="label">Por cima</div><ul>${p.top.map(x => `<li>${esc(x)}</li>`).join("")}</ul></div>
+      <div><div class="label">Por baixo</div><ul>${p.bot.map(x => `<li>${esc(x)}</li>`).join("")}</ul></div>
+    </div>
+    ${out.length ? `<div class="label">Daqui você vai para</div><div class="list-links">${out.map(e => linkBtn(e[1], `${POS[e[1]].n} · ${e[2]}`, e[3] ? "+" + e[3] : "")).join("")}</div>` : ""}
+    ${inn.length ? `<div class="label" style="margin-top:14px">Você chega aqui vindo de</div><div class="list-links">${inn.map(e => linkBtn(e[0], `${POS[e[0]].n} · ${e[2]}`, "")).join("")}</div>` : ""}
+    <div style="margin-top:14px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+      <span class="hint">${techs.length} técnica${techs.length !== 1 ? "s" : ""} desta posição na biblioteca</span>
+      ${techs.length ? `<a class="btn small" href="#tecnicas" data-filter-pos="${id}">Ver técnicas</a>` : ""}
+    </div>`;
+  $$("#pos-detail [data-go]").forEach(b => b.addEventListener("click", () => selectPos(b.dataset.go)));
+  const fl = $("#pos-detail [data-filter-pos]");
+  if (fl) fl.addEventListener("click", () => { $("#f-pos").value = id; filt.pos = id; renderTech(); });
+}
+
+/* ---------- TECHNIQUES ---------- */
+const filt = { q: "", pos: "", belt: "", type: "" };
+let favs = new Set(store.get("favs", []));
+function initTech() {
+  Object.entries(POS).forEach(([id, p]) => { const o = document.createElement("option"); o.value = id; o.textContent = p.n; $("#f-pos").appendChild(o); });
+  const seg = $("#f-type");
+  const opts = [["", "Todas"], ["fav", "★ Favoritas"], ...TYPES.map(t => [t, t[0].toUpperCase() + t.slice(1)])];
+  seg.innerHTML = opts.map(([v, l]) => `<button type="button" data-v="${v}" aria-pressed="${v === "" }">${l}</button>`).join("");
+  seg.addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    filt.type = b.dataset.v; $$("button", seg).forEach(x => x.setAttribute("aria-pressed", x === b)); renderTech();
+  });
+  $("#q").addEventListener("input", e => { filt.q = e.target.value.trim().toLowerCase(); renderTech(); });
+  $("#f-pos").addEventListener("change", e => { filt.pos = e.target.value; renderTech(); });
+  $("#f-belt").addEventListener("change", e => { filt.belt = e.target.value; renderTech(); });
+  $("#tech-grid").addEventListener("click", e => {
+    const f = e.target.closest(".fav"); if (f) {
+      const n = f.dataset.n; favs.has(n) ? favs.delete(n) : favs.add(n);
+      store.set("favs", [...favs]); renderTech(); return;
+    }
+    const pl = e.target.closest("[data-pos-link]"); if (pl) { selectPos(pl.dataset.posLink); }
+  });
+}
+const norm = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+function renderTech() {
+  const q = norm(filt.q);
+  const list = T.filter(t =>
+    (!filt.pos || t.pos === filt.pos) &&
+    (!filt.belt || t.b === filt.belt) &&
+    (!filt.type || (filt.type === "fav" ? favs.has(t.n) : t.t === filt.type)) &&
+    (!q || norm(t.n + " " + t.t + " " + POS[t.pos].n + " " + t.s.join(" ")).includes(q)));
+  $("#tech-count").textContent = `${list.length} de ${T.length} técnicas`;
+  $("#tech-grid").innerHTML = list.length ? list.map(t => `
+    <article class="panel tech">
+      <div class="tech-top">
+        <h3>${esc(t.n)}</h3>
+        <button class="fav" data-n="${esc(t.n)}" aria-pressed="${favs.has(t.n)}" aria-label="Favoritar ${esc(t.n)}">★</button>
+      </div>
+      <div class="meta">
+        <a class="chip" href="#mapa" data-pos-link="${t.pos}">${esc(POS[t.pos].n)}</a>
+        <span class="chip">${t.t}</span>
+        <span class="chip"><span class="mini-belt" style="background:${BELTS[BELT_KEY[t.b]].c}"></span> a partir da ${t.b}</span>
+      </div>
+      <ol>${t.s.map(x => `<li>${esc(x)}</li>`).join("")}</ol>
+      <div class="key"><b>Detalhe-chave:</b> ${esc(t.k)}</div>
+    </article>`).join("") : `<div class="empty panel" style="grid-column:1/-1">Nenhuma técnica com esses filtros. Tente limpar a busca ou escolher outra posição.</div>`;
+}
+
+/* ---------- TIMER ---------- */
+const tm = { phase: "idle", round: 1, left: 0, total: 0, running: false, last: 0, raf: 0, beeped: {} };
+let actx = null, wake = null;
+function cfg() {
+  return {
+    rounds: Math.max(1, +$("#c-rounds").value || 1),
+    work: Math.max(10, Math.round((+$("#c-work").value || 5) * 60)),
+    rest: Math.max(0, +$("#c-rest").value || 0),
+    prep: Math.max(0, +$("#c-prep").value || 0)
+  };
+}
+function beep(freq = 880, dur = 0.15, times = 1) {
+  if (!actx) return;
+  for (let i = 0; i < times; i++) {
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.frequency.value = freq; o.type = "square";
+    const t0 = actx.currentTime + i * (dur + 0.08);
+    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.25, t0 + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g).connect(actx.destination); o.start(t0); o.stop(t0 + dur + 0.02);
+  }
+}
+const fmt = s => { s = Math.max(0, Math.ceil(s)); return String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0"); };
+function setPhase(p) {
+  const c = cfg(); tm.phase = p; tm.beeped = {};
+  if (p === "prep") tm.total = c.prep; else if (p === "work") tm.total = c.work; else if (p === "rest") tm.total = c.rest; else tm.total = 0;
+  tm.left = tm.total;
+  if (p === "work") beep(660, 0.5, 1);
+  if (p === "rest") beep(440, 0.25, 3);
+}
+function nextPhase() {
+  const c = cfg();
+  if (tm.phase === "prep") return setPhase("work");
+  if (tm.phase === "work") {
+    if (tm.round >= c.rounds) { tm.phase = "done"; tm.left = 0; stopTimer(); beep(523, 0.3, 4); toast("Treino concluído. Oss!"); return; }
+    return c.rest ? setPhase("rest") : (tm.round++, setPhase("work"));
+  }
+  if (tm.phase === "rest") { tm.round++; return setPhase("work"); }
+}
+function tick(now) {
+  if (!tm.running) return;
+  const dt = (now - tm.last) / 1000; tm.last = now;
+  tm.left -= dt;
+  const s = Math.ceil(tm.left);
+  if (tm.phase === "work" && s <= 10 && s > 0 && !tm.beeped[s] && s === 10) { tm.beeped[s] = 1; beep(988, 0.12, 2); }
+  if ((tm.phase === "prep" || tm.phase === "rest") && s <= 3 && s > 0 && !tm.beeped[s]) { tm.beeped[s] = 1; beep(740, 0.1, 1); }
+  if (tm.left <= 0) nextPhase();
+  renderTimer();
+  tm.raf = requestAnimationFrame(tick);
+}
+async function startTimer() {
+  try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === "suspended") await actx.resume(); } catch { actx = null; }
+  try { wake = await navigator.wakeLock?.request("screen"); } catch { wake = null; }
+  if (tm.phase === "idle" || tm.phase === "done") { tm.round = 1; setPhase(cfg().prep ? "prep" : "work"); }
+  tm.running = true; tm.last = performance.now(); tm.raf = requestAnimationFrame(tick); renderTimer();
+}
+function stopTimer() { tm.running = false; cancelAnimationFrame(tm.raf); try { wake?.release(); } catch {} wake = null; renderTimer(); }
+function resetTimer() { stopTimer(); tm.phase = "idle"; tm.round = 1; renderTimer(); }
+function renderTimer() {
+  const c = cfg(), clock = $("#clock");
+  const labels = { idle: "Pronto", prep: "Prepare-se", work: "Combate", rest: "Descanso", done: "Fim" };
+  const left = tm.phase === "idle" ? c.work : tm.left;
+  $("#t-digits").textContent = fmt(left);
+  $("#t-phase").textContent = labels[tm.phase] + (tm.running || tm.phase === "idle" || tm.phase === "done" ? "" : " · pausado");
+  $("#t-round").textContent = `Round ${Math.min(tm.round, c.rounds)} de ${c.rounds}`;
+  clock.classList.toggle("work", tm.phase === "work");
+  clock.classList.toggle("rest", tm.phase === "rest" || tm.phase === "prep");
+  clock.classList.toggle("warn", tm.phase === "work" && tm.left <= 10);
+  $("#t-bar").style.width = tm.total ? `${100 * (1 - tm.left / tm.total)}%` : (tm.phase === "done" ? "100%" : "0%");
+  const sb = $("#t-start");
+  sb.textContent = tm.running ? "Pausar" : (tm.phase === "idle" || tm.phase === "done" ? "Iniciar" : "Continuar");
+  sb.className = "btn " + (tm.running ? "primary" : "go");
+}
+function initTimer() {
+  const saved = store.get("timer", null);
+  if (saved) ["rounds", "work", "rest", "prep"].forEach(k => { if (saved[k] != null) $("#c-" + k).value = saved[k]; });
+  $("#presets").innerHTML = FIGHT.map(([b, m]) => `<button type="button" data-m="${m}"><span>Faixa ${b.toLowerCase()}</span><span>${m} min</span></button>`).join("") +
+    `<button type="button" data-m="5" data-r="6" data-rest="60"><span>Treino padrão de rola</span><span>6 × 5 min</span></button>`;
+  $("#presets").addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    $("#c-work").value = b.dataset.m; $("#c-rounds").value = b.dataset.r || 1; $("#c-rest").value = b.dataset.rest || 60;
+    saveCfg(); resetTimer(); toast(`Configurado: ${b.firstElementChild.textContent}`);
+  });
+  $$("#v-cronometro input").forEach(i => i.addEventListener("change", () => { saveCfg(); if (!tm.running && tm.phase === "idle") renderTimer(); }));
+  $("#t-start").addEventListener("click", () => tm.running ? stopTimer() : startTimer());
+  $("#t-reset").addEventListener("click", resetTimer);
+  $("#t-skip").addEventListener("click", () => { if (tm.phase === "idle" || tm.phase === "done") return; nextPhase(); renderTimer(); });
+  renderTimer();
+}
+function saveCfg() { store.set("timer", { rounds: $("#c-rounds").value, work: $("#c-work").value, rest: $("#c-rest").value, prep: $("#c-prep").value }); }
+
+/* ---------- LOG ---------- */
+const isoDay = d => { const z = new Date(d.getTime() - d.getTimezoneOffset() * 60000); return z.toISOString().slice(0, 10); };
+function sampleEntries() {
+  const today = new Date(); const ago = n => { const d = new Date(today); d.setDate(d.getDate() - n); return isoDay(d); };
+  return [
+    { id: "s1", date: ago(1), dur: 90, kind: "Kimono", rounds: 6, tech: "Raspagem tesoura, triângulo", notes: "Triângulo encaixou duas vezes. Ainda deixo a postura voltar.", sample: true },
+    { id: "s2", date: ago(3), dur: 60, kind: "Sem kimono", rounds: 5, tech: "Baiana, costas pela meia", notes: "Cansei no 4º round. Trabalhar respiração.", sample: true },
+    { id: "s3", date: ago(6), dur: 90, kind: "Kimono", rounds: 4, tech: "Passagem toreando", notes: "", sample: true },
+    { id: "s4", date: ago(9), dur: 120, kind: "Open mat", rounds: 8, tech: "", notes: "Rolei com faixas roxas. Fugas da montada salvaram.", sample: true },
+    { id: "s5", date: ago(13), dur: 90, kind: "Kimono", rounds: 5, tech: "Fuga do 100 kg", notes: "", sample: true },
+    { id: "s6", date: ago(17), dur: 90, kind: "Kimono", rounds: 6, tech: "Armlock da guarda", notes: "", sample: true },
+    { id: "s7", date: ago(24), dur: 60, kind: "Sem kimono", rounds: 4, tech: "", notes: "", sample: true }
+  ];
+}
+let entries = store.get("log", null);
+let usingSample = false;
+if (!Array.isArray(entries) || !entries.length) { entries = sampleEntries(); usingSample = true; }
+let pendingDelete = null;
+const MONTHS = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+function weekStart(d) { const x = new Date(d); x.setHours(0, 0, 0, 0); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; }
+function renderLog() {
+  $("#sample-banner").hidden = !usingSample;
+  const sorted = [...entries].sort((a, b) => b.date.localeCompare(a.date));
+  const now = new Date(), ym = isoDay(now).slice(0, 7);
+  const mins = entries.reduce((s, e) => s + (+e.dur || 0), 0);
+  $("#s-count").textContent = entries.length;
+  $("#s-hours").innerHTML = `${Math.floor(mins / 60)}<small>h${mins % 60 ? String(mins % 60).padStart(2, "0") : ""}</small>`;
+  $("#s-rounds").textContent = entries.reduce((s, e) => s + (+e.rounds || 0), 0);
+  $("#s-month").textContent = entries.filter(e => e.date.startsWith(ym)).length;
+  // weekly bars
+  const ws = weekStart(now); const weeks = [];
+  for (let i = 7; i >= 0; i--) { const s = new Date(ws); s.setDate(s.getDate() - i * 7); weeks.push({ s, n: 0 }); }
+  entries.forEach(e => { const d = new Date(e.date + "T12:00:00"); const w = weekStart(d).getTime(); const f = weeks.find(x => x.s.getTime() === w); if (f) f.n++; });
+  const max = Math.max(3, ...weeks.map(w => w.n));
+  $("#bars").innerHTML = weeks.map((w, i) => `<div class="col"><span class="n">${w.n}</span><div class="bar${i === 7 ? " now" : ""}" style="height:${(w.n / max) * 100}%"></div><span class="wk">${w.s.getDate()}/${w.s.getMonth() + 1}</span></div>`).join("");
+  $("#entries").innerHTML = sorted.map(e => {
+    const d = new Date(e.date + "T12:00:00");
+    const del = pendingDelete === e.id
+      ? `<div class="confirm-row"><button class="btn small" data-del-yes="${e.id}" style="border-color:var(--danger);color:var(--danger)">Excluir</button><button class="btn small ghost" data-del-no>Cancelar</button></div>`
+      : (e.sample ? "" : `<button class="btn small ghost" data-del="${e.id}" aria-label="Excluir treino">✕</button>`);
+    return `<div class="entry">
+      <div class="date"><b>${d.getDate()}</b><span>${MONTHS[d.getMonth()]}</span></div>
+      <div class="body">
+        <div class="tags"><span class="chip">${esc(e.kind)}</span><span class="chip">${e.dur} min</span>${+e.rounds ? `<span class="chip">${e.rounds} rounds</span>` : ""}${e.sample ? `<span class="chip pts">exemplo</span>` : ""}</div>
+        ${e.tech ? `<p><b style="color:var(--ink)">Técnicas:</b> ${esc(e.tech)}</p>` : ""}
+        ${e.notes ? `<p>${esc(e.notes)}</p>` : ""}
+      </div>
+      ${del}
+    </div>`;
+  }).join("");
+}
+function initLog() {
+  $("#l-date").value = isoDay(new Date());
+  $("#log-form").addEventListener("submit", e => {
+    e.preventDefault();
+    if (usingSample) { entries = []; usingSample = false; }
+    entries.push({ id: Date.now().toString(36), date: $("#l-date").value, dur: +$("#l-dur").value, kind: $("#l-kind").value, rounds: +$("#l-rounds").value || 0, tech: $("#l-tech").value.trim(), notes: $("#l-notes").value.trim() });
+    store.set("log", entries);
+    $("#l-tech").value = ""; $("#l-notes").value = "";
+    renderLog(); toast("Treino salvo. Oss!");
+  });
+  $("#entries").addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    if (b.dataset.del) pendingDelete = b.dataset.del;
+    else if (b.dataset.delYes) { entries = entries.filter(x => x.id !== b.dataset.delYes); pendingDelete = null; store.set("log", entries); toast("Treino excluído"); if (!entries.length) { entries = sampleEntries(); usingSample = true; } }
+    else if ("delNo" in b.dataset) pendingDelete = null;
+    renderLog();
+  });
+  renderLog();
+}
+
+/* ---------- BELTS ---------- */
+let deg = store.get("deg", 2);
+function initBelts() {
+  $("#belt-list").innerHTML = BELTS.map((b, i) => `
+    <div class="belt-row">
+      ${beltHTML(i, i === 4 ? 0 : 4)}
+      <div><h3>${b.n}</h3><p>${esc(b.d)}</p>
+        <div class="belt-facts"><span class="chip">${esc(b.min)}</span><span class="chip">${esc(b.age)}</span>${i < 4 ? "" : ""}</div>
+      </div>
+    </div>`).join("") + `<p class="hint" style="margin:12px 0 0">Cada faixa colorida pode receber até 4 graus, a critério do professor. Em adultos, não há tempo mínimo entre branca e azul.</p>`;
+  $("#b-deg").innerHTML = [0, 1, 2, 3, 4].map(n => `<button type="button" data-d="${n}" aria-pressed="${n === deg}">${n}</button>`).join("");
+  $("#b-deg").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; deg = +b.dataset.d; store.set("deg", deg); $$("#b-deg button").forEach(x => x.setAttribute("aria-pressed", x === b)); calcBelt(); });
+  const saved = store.get("beltcalc", null);
+  if (saved) { $("#b-cur").value = saved.cur; $("#b-since").value = saved.since || ""; $("#b-birth").value = saved.birth || ""; }
+  else { const d = new Date(); d.setMonth(d.getMonth() - 14); $("#b-since").value = isoDay(d); }
+  ["#b-cur", "#b-since", "#b-birth"].forEach(s => $(s).addEventListener("change", () => { store.set("beltcalc", { cur: $("#b-cur").value, since: $("#b-since").value, birth: $("#b-birth").value }); calcBelt(); }));
+  calcBelt();
+}
+function addYears(d, y) { const r = new Date(d); r.setMonth(r.getMonth() + Math.round(y * 12)); return r; }
+function fmtDate(d) { return `${d.getDate()} de ${["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"][d.getMonth()]} de ${d.getFullYear()}`; }
+function calcBelt() {
+  const cur = +$("#b-cur").value, next = cur + 1;
+  $("#b-preview").outerHTML = beltHTML(cur, deg).replace('class="belt"', 'class="belt" id="b-preview"');
+  const since = $("#b-since").value ? new Date($("#b-since").value + "T12:00:00") : null;
+  const birth = $("#b-birth").value ? new Date($("#b-birth").value + "T12:00:00") : null;
+  const now = new Date();
+  const notes = [];
+  let earliest = null;
+  if (since) {
+    const byTime = addYears(since, MIN_YEARS[cur]);
+    earliest = byTime;
+    const months = Math.max(0, (now.getFullYear() - since.getFullYear()) * 12 + now.getMonth() - since.getMonth());
+    notes.push(`Você está há ${Math.floor(months / 12) ? Math.floor(months / 12) + " ano" + (Math.floor(months / 12) > 1 ? "s" : "") + " e " : ""}${months % 12} ${months % 12 === 1 ? "mês" : "meses"} na faixa ${BELTS[cur].n.toLowerCase()}.`);
+    if (MIN_YEARS[cur]) notes.push(`Tempo mínimo na ${BELTS[cur].n.toLowerCase()}: ${String(MIN_YEARS[cur]).replace(".5", " e meio")} ano${MIN_YEARS[cur] > 1 ? "s" : ""}.`);
+    else notes.push("Não existe tempo mínimo da branca para a azul.");
+  }
+  if (birth) {
+    const byAge = addYears(birth, MIN_AGE_NEXT[cur]);
+    notes.push(`Idade mínima para a ${BELTS[next].n.toLowerCase()}: ${MIN_AGE_NEXT[cur]} anos.`);
+    if (!earliest || byAge > earliest) earliest = byAge;
+  }
+  if (deg < 4) notes.push(`Você tem ${deg} de 4 graus. Normalmente a troca de faixa vem depois do 4º grau.`);
+  let head;
+  if (!earliest) head = `<div class="label">Preencha a data em que recebeu a faixa</div>`;
+  else if (earliest <= now) head = `<div class="label">Próxima faixa: ${BELTS[next].n}</div><div class="big" style="color:var(--mat)">Já cumpre o tempo mínimo</div>`;
+  else {
+    const days = Math.ceil((earliest - now) / 86400000);
+    head = `<div class="label">Próxima faixa: ${BELTS[next].n}</div><div class="big">A partir de ${fmtDate(earliest)}</div><div class="hint">Faltam ${days} dias, ou cerca de ${Math.max(1, Math.round(days / 7))} semanas de treino.</div>`;
+  }
+  $("#b-result").innerHTML = head + (notes.length ? `<ul>${notes.map(n => `<li>${esc(n)}</li>`).join("")}</ul>` : "") + `<div style="margin-top:12px">${beltHTML(next, 0)}</div>`;
+}
+
+/* ---------- BOOT ---------- */
+drawMap(); selectPos(POS[selPos] ? selPos : "guarda_fechada");
+initTech(); renderTech();
+initTimer(); initLog(); initBelts();
+route();
+})();
+</script>
